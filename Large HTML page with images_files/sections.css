@@ -1,0 +1,9 @@
+div.section {font-size : 14pt; text-indent : 4em}
+div.subsection { font-size : 12pt}
+div.subsubsection { font-size : 10pt}
+a.mini {font-size : 11pt}
+h1.cen {font-size : 18pt; text-align : center; color : black}
+body {font-family: Verdana, serif; font-size: 10pt}
+div.fore { color: teal} 
+div.heading { color: navy; font-size : 12pt}
+div.danger { color : red; font-size : 14pt }
