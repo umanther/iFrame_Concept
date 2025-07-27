@@ -203,6 +203,7 @@
 
     async function parseJsonTemplate() {
         const jsonData = await loadJsonFile('style-templates.json')
+        console.log(jsonData);
     }
 
     const configData = JSON.parse(document.getElementById("style-defaults").textContent);
@@ -212,7 +213,8 @@
     const frame = document.getElementById("previewFrame");
     window.onload = () => {
         frame.src = "Large HTML page with images.html";
-        frame.onload = () => {
+        frame.onload = async () => {
+            await parseJsonTemplate();
             injectStyleSheet();
         };
 

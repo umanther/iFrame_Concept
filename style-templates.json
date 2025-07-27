@@ -1,7 +1,7 @@
 {
   "templates": [
     {
-      "name": "Default",
+      "name": "default",
       "page": {
         "size": {
           "min": 0.5,
