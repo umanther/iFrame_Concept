@@ -143,13 +143,30 @@
 <script>
     let testing;
 
+    /**
+     * @typedef {Object} StyleType
+     * @property {number} min
+     * @property {number} max
+     * @property {number} step
+     * @property {number} default
+     * @property {string} family
+     * @property {string} color
+     */
+
+    /**
+     * @class
+     */
     class StyleCategory {
         min;
         max;
         step;
         default;
-        family;
         color;
+        family;
+        /**
+         * @param {string} name
+         * @param {{ [key: string]: StyleType}} settings
+         */
         constructor(name, settings) {
             Object.assign(this, { name }, settings);
         }
@@ -184,19 +201,9 @@
         }
     }
 
-    let templates = null;
-
-    function whenReady(callback) {
-        loadJsonFile("style-templates.json").then(data => {
-            templates = data;
-            callback(data);
-        });
+    async function parseJsonTemplate() {
+        const jsonData = await loadJsonFile('style-templates.json')
     }
-
-    whenReady(data => {
-        console.log("Templates loaded!", data);
-        setupStyleControls();
-    });
 
     const configData = JSON.parse(document.getElementById("style-defaults").textContent);
     let fontConfig = new StyleCategory("font", configData.font);
@@ -222,9 +229,7 @@
 
         }
 
-
         // Inject Google Fonts
-
         if (!doc.getElementById("google-fonts")) {
             const link = doc.createElement("link");
             link.id = "google-fonts";

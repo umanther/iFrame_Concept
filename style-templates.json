@@ -2,7 +2,7 @@
   "templates": [
     {
       "name": "Default",
-      "font": {
+      "page": {
         "size": {
           "min": 0.5,
           "max": 3,
@@ -39,7 +39,7 @@
     },
     {
       "name": "Large Print",
-      "font": {
+      "page": {
         "size": {
           "min": 0.5,
           "max": 3,
