@@ -1,0 +1,78 @@
+{
+  "templates": [
+    {
+      "name": "Default",
+      "font": {
+        "size": {
+          "min": 0.5,
+          "max": 3,
+          "step": 0.1,
+          "default": 1,
+          "locked": false
+        },
+        "color": {
+          "default": "#000000",
+          "locked": false
+        },
+        "family": {
+          "default": "sans-serif",
+          "locked": false
+        }
+      },
+      "header": {
+        "size": {
+          "min": 0.5,
+          "max": 5,
+          "step": 0.1,
+          "default": 2,
+          "locked": false
+        },
+        "color": {
+          "default": "#000000",
+          "locked": false
+        },
+        "family": {
+          "default": "sans-serif",
+          "locked": false
+        }
+      }
+    },
+    {
+      "name": "Large Print",
+      "font": {
+        "size": {
+          "min": 0.5,
+          "max": 3,
+          "step": 0.1,
+          "default": 2,
+          "locked": true
+        },
+        "color": {
+          "default": "#333333",
+          "locked": false
+        },
+        "family": {
+          "default": "'Roboto', sans-serif",
+          "locked": true
+        }
+      },
+      "header": {
+        "size": {
+          "min": 0.5,
+          "max": 5,
+          "step": 0.1,
+          "default": 4,
+          "locked": true
+        },
+        "color": {
+          "default": "#000000",
+          "locked": false
+        },
+        "family": {
+          "default": "'Merriweather', serif",
+          "locked": false
+        }
+      }
+    }
+  ]
+}

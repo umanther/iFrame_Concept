@@ -153,6 +153,45 @@
         }
     }
 
+    class StyleTemplates {
+        constructor(name, templates) {
+            this.name = name;
+            this.templates = [];
+            for (let template in templates) {
+
+            }
+        }
+    }
+
+    async function loadJsonFile(filename) {
+        try {
+            const response = await fetch(filename);
+            if (response.ok) {
+                const jsonString = await response.text();
+                return JSON.parse(jsonString);
+            } else {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+        } catch (error) {
+            console.error("Error loading or parsing JSON file:", error);
+            return null; // Or handle the error as appropriate
+        }
+    }
+
+    let templates = null;
+
+    function whenReady(callback) {
+        loadJsonFile("style-templates.json").then(data => {
+            templates = data;
+            callback(data);
+        });
+    }
+
+    whenReady(data => {
+        console.log("Templates loaded!", data);
+        setupStyleControls();
+    });
+
     const configData = JSON.parse(document.getElementById("style-defaults").textContent);
     let fontConfig = new StyleCategory("font", configData.font);
     let headerConfig = new StyleCategory("header", configData.header);
