@@ -90,7 +90,8 @@
     <div id="styleControls">
         <div class="styleBlock">
             <h3>Page settings</h3>
-            <label for="fontSize">Font Size: <input type="number" id="fontSizeInput"><span id="fontSizeUnit">×</span></label><br/>
+            <label for="fontSize">Font Size: <input type="number" id="fontSizeInput"><span
+                    id="fontSizeUnit">×</span></label><br/>
             <input type="range" id="fontSize"/>
 
             <br/><br/>
@@ -110,7 +111,8 @@
         </div>
         <div class="styleBlock">
             <h3>Header settings</h3>
-            <label for="headerSize">Font Size: <input type="number" id="headerSizeInput"><span id="headerSizeUnit">×</span></label><br/>
+            <label for="headerSize">Font Size: <input type="number" id="headerSizeInput"><span
+                    id="headerSizeUnit">×</span></label><br/>
             <input type="range" id="headerSize"/>
 
             <br/><br/>
@@ -141,49 +143,103 @@
 </div>
 
 <script>
-    let testing;
-
     /**
-     * @typedef {Object} StyleType
+     * @typedef {Object} SizeSetting
      * @property {number} min
      * @property {number} max
      * @property {number} step
      * @property {number} default
-     * @property {string} family
-     * @property {string} color
+     * @property {boolean} locked
      */
+
+    /**
+     * @typedef {Object} ColorSetting
+     * @property {string} default
+     * @property {boolean} locked
+     */
+
+    /**
+     * @typedef {Object} FamilySetting
+     * @property {string} default
+     * @property {boolean} locked
+     */
+
+    /**
+     * @typedef {Object} StyleSheetType
+     * @property {SizeSetting} size
+     * @property {ColorSetting} color
+     * @property {FamilySetting} family
+     */
+
 
     /**
      * @class
      */
-    class StyleCategory {
-        min;
-        max;
-        step;
-        default;
-        color;
-        family;
+    class StyleSheet {
         /**
          * @param {string} name
-         * @param {{ [key: string]: StyleType}} settings
+         * @param {StyleSheetType} settings
          */
         constructor(name, settings) {
-            Object.assign(this, { name }, settings);
+            this.name = name;
+            this.size = settings.size;
+            this.color = settings.color;
+            this.family = settings.family;
         }
 
         clamp(value) {
-            return Math.min(Math.max(value, this.min), this.max);
+            return Math.min(Math.max(value, this.size.min), this.size.max);
         }
     }
 
     class StyleTemplates {
-        constructor(name, templates) {
-            this.name = name;
-            this.templates = [];
-            for (let template in templates) {
+        constructor(templates = []) {
+            this.templates = templates; // Accept initial templates optionally
+            this.setCurrentTemplate('Default');
+        }
 
+        // Return an array of all template names
+        getTemplateNames() {
+            return this.templates.map(template => template.name);
+        }
+
+        // Set currentDefault with fallback logic
+        setCurrentTemplate(name) {
+            const names = this.getTemplateNames();
+
+            if (names.includes(name)) {
+                this.currentDefault = name;
+            } else if (names.includes('Default')) {
+                this.currentDefault = 'Default';
+            } else if (names.length > 0) {
+                this.currentDefault = names[0];
+            } else {
+                this.currentDefault = null;
             }
         }
+
+        getCurrentTemplate() {
+            return this.templates.find(t => t.name === this.currentDefault) || null;
+        }
+    }
+
+    function createStyleTemplatesProxy(styleTemplatesInstance) {
+        return new Proxy(styleTemplatesInstance, {
+            get(target, prop, receiver) {
+                // If prop is a real method or property of the class, use it
+                if (prop in target) {
+                    return Reflect.get(target, prop, receiver);
+                }
+
+                // Otherwise, try to fetch from the current template
+                const current = target.getCurrentTemplate();
+                if (current && prop in current) {
+                    return current[prop];
+                }
+
+                return undefined;
+            }
+        });
     }
 
     async function loadJsonFile(filename) {
@@ -201,14 +257,43 @@
         }
     }
 
+    let styleTemplates;
+
     async function parseJsonTemplate() {
-        const jsonData = await loadJsonFile('style-templates.json')
-        console.log(jsonData);
+        try {
+            const jsonData = await loadJsonFile('style-templates.json');
+
+            // Create a new StyleTemplates object
+            let styleTemplatesRaw = new StyleTemplates();
+            styleTemplates = createStyleTemplatesProxy(styleTemplatesRaw);
+
+            // Iterate over each template
+            jsonData.templates.forEach(template => {
+                const page = new StyleSheet("page", template.page);
+                const header = new StyleSheet("header", template.header);
+                styleTemplates.templates.push({
+                    name: template.name,
+                    page,
+                    header
+                });
+
+                // Set default config if it's named "default"
+                if (template.name.toLowerCase() === "default") {
+                    fontConfig = page;
+                    headerConfig = header;
+                    styleTemplates.currentDefault = template.name;
+                }
+            });
+
+            console.log("Templates loaded:", styleTemplates);
+        } catch (error) {
+            console.error("Failed to parse style templates:", error);
+        }
     }
 
     const configData = JSON.parse(document.getElementById("style-defaults").textContent);
-    let fontConfig = new StyleCategory("font", configData.font);
-    let headerConfig = new StyleCategory("header", configData.header);
+    let fontConfig = new StyleSheet("font", configData.font);
+    let headerConfig = new StyleSheet("header", configData.header);
 
     const frame = document.getElementById("previewFrame");
     window.onload = () => {
@@ -219,6 +304,7 @@
         };
 
     };
+
     function injectStyleSheet() {
         const doc = frame.contentDocument || frame.contentWindow.document;
 
@@ -272,35 +358,34 @@
         const headerColor = document.getElementById("headerColor");
 
         // Font size range + input
-        fontSize.min = fontConfig.min;
-        fontSize.max = fontConfig.max;
-        fontSize.step = fontConfig.step;
-        fontSize.value = fontConfig.default;
-        fontSizeInput.min = fontConfig.min;
-        fontSizeInput.max = fontConfig.max;
-        fontSizeInput.step = fontConfig.step;
-        fontSizeInput.value = fontConfig.default;
+        fontSize.min = fontConfig.size.min;
+        fontSize.max = fontConfig.size.max;
+        fontSize.step = fontConfig.size.step;
+        fontSize.value = fontConfig.size.default;
+        fontSizeInput.min = fontConfig.size.min;
+        fontSizeInput.max = fontConfig.size.max;
+        fontSizeInput.step = fontConfig.size.step;
+        fontSizeInput.value = fontConfig.size.default;
 
         // Header size range + input
-        headerSize.min = headerConfig.min;
-        headerSize.max = headerConfig.max;
-        headerSize.step = headerConfig.step;
-        headerSize.value = headerConfig.default;
-        headerSizeInput.min = headerConfig.min;
-        headerSizeInput.max = headerConfig.max;
-        headerSizeInput.step = headerConfig.step;
-        headerSizeInput.value = headerConfig.default;
+        headerSize.min = headerConfig.size.min;
+        headerSize.max = headerConfig.size.max;
+        headerSize.step = headerConfig.size.step;
+        headerSize.value = headerConfig.size.default;
+        headerSizeInput.min = headerConfig.size.min;
+        headerSizeInput.max = headerConfig.size.max;
+        headerSizeInput.step = headerConfig.size.step;
+        headerSizeInput.value = headerConfig.size.default;
 
         // Colors
-        textColor.value = fontConfig.color;
-        headerColor.value = headerConfig.color;
+        textColor.value = fontConfig.color.default;
+        headerColor.value = headerConfig.color.default;
 
         // Font families (dropdowns)
-        fontFamilyChoices.setChoiceByValue(fontConfig.family);
-        headerFamilyChoices.setChoiceByValue(headerConfig.family);
+        fontFamilyChoices.setChoiceByValue(fontConfig.family.default);
+        headerFamilyChoices.setChoiceByValue(headerConfig.family.default);
 
         const applyStyles = () => {
-
             const style = doc.getElementById("dynamic-style");
             style.textContent = `
         body {
@@ -318,18 +403,19 @@
 
         const updateStyle = () => {
             applyStyles();
-        }
+        };
 
         function resetStyleControls() {
-            fontSize.value = fontConfig.default;
-            fontSizeInput.value = fontConfig.default;
-            headerSize.value = headerConfig.default;
-            headerSizeInput.value = headerConfig.default;
-            textColor.value = fontConfig.color;
-            headerColor.value = headerConfig.color;
+            fontSize.value = fontConfig.size.default;
+            fontSizeInput.value = fontConfig.size.default;
+            headerSize.value = headerConfig.size.default;
+            headerSizeInput.value = headerConfig.size.default;
 
-            fontFamilyChoices.setChoiceByValue(fontConfig.family);
-            headerFamilyChoices.setChoiceByValue(headerConfig.family);
+            textColor.value = fontConfig.color.default;
+            headerColor.value = headerConfig.color.default;
+
+            fontFamilyChoices.setChoiceByValue(fontConfig.family.default);
+            headerFamilyChoices.setChoiceByValue(headerConfig.family.default);
 
             updateStyle();
         }
@@ -345,6 +431,7 @@
             fontSize.value = fontSizeInput.value;
             updateStyle();
         });
+
         textColor.addEventListener("input", updateStyle);
         fontFamily.addEventListener("change", updateStyle);
 
@@ -357,6 +444,7 @@
             headerSize.value = headerSizeInput.value;
             updateStyle();
         });
+
         headerColor.addEventListener("input", updateStyle);
         headerFamily.addEventListener("change", updateStyle);
     }
