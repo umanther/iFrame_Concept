@@ -144,6 +144,12 @@
     let testing;
 
     class StyleCategory {
+        min;
+        max;
+        step;
+        default;
+        family;
+        color;
         constructor(name, settings) {
             Object.assign(this, { name }, settings);
         }
@@ -174,7 +180,7 @@
             }
         } catch (error) {
             console.error("Error loading or parsing JSON file:", error);
-            return null; // Or handle the error as appropriate
+            throw error;
         }
     }
 
