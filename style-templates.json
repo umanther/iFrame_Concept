@@ -42,7 +42,7 @@
       "page": {
         "size": {
           "min": 0.5,
-          "max": 3,
+          "max": 5,
           "step": 0.1,
           "default": 2,
           "locked": true
