@@ -118,8 +118,8 @@
         <button onclick="printPreview()">Print Preview</button>
         <button onclick="saveAsPDF()">Save as PDF</button>
         <br/><br/>
-        <label for="templateSelector">Select Style Template:</label><br />
-        <select id="templateSelector"></select><br />
+        <label for="templateSelector">Select Style Template:</label><br/>
+        <select id="templateSelector"></select><br/>
         <button id="resetStyles">Reset to template</button>
 
     </div>
@@ -237,6 +237,7 @@
     }
 
     const frame = document.getElementById("previewFrame");
+
     window.onload = () => {
         frame.src = "Large HTML page with images.html";
         frame.onload = async () => {
@@ -276,19 +277,20 @@
         }
     }
 
-    function findStyleSheetWithMarker(doc) {
-        for (let i = 0; i < doc.styleSheets.length; i++) {
-            const sheet = doc.styleSheets[i];
-            try {
-                if (sheet.ownerNode?.getAttribute("data-style-marker") === "dynamic") {
-                    return sheet;
-                }
-            } catch (e) {
-                console.warn("Could not access stylesheet:", sheet.href, e);
-            }
-        }
-        return null;
-    }
+
+    // function findStyleSheetWithMarker(doc) {
+    //     for (let i = 0; i < doc.styleSheets.length; i++) {
+    //         const sheet = doc.styleSheets[i];
+    //         try {
+    //             if (sheet.ownerNode?.getAttribute("data-style-marker") === "dynamic") {
+    //                 return sheet;
+    //             }
+    //         } catch (e) {
+    //             console.warn("Could not access stylesheet:", sheet.href, e);
+    //         }
+    //     }
+    //     return null;
+    // }
 
     function populateTemplateSelector() {
         const selector = document.getElementById("templateSelector");
@@ -317,58 +319,60 @@
             selector.value = names[0];
         }
 
-        function updateControlsConstraints() {
-            const fontSize = document.getElementById("fontSize");
-            const fontSizeInput = document.getElementById("fontSizeInput");
-            const headerSize = document.getElementById("headerSize");
-            const headerSizeInput = document.getElementById("headerSizeInput");
-
-            // Update page sliders constraints
-            if (styleTemplates.page && styleTemplates.page.size) {
-                //TODO: Change this so it loads all template defaults.  All values should be updated.
-                fontSize.value = styleTemplates.page.clamp(fontSize.value);
-                fontSize.min = styleTemplates.page.size.min;
-                fontSize.max = styleTemplates.page.size.max;
-                fontSize.step = styleTemplates.page.size.step;
-
-                fontSizeInput.value = styleTemplates.page.clamp(fontSizeInput.value);
-                fontSizeInput.min = styleTemplates.page.size.min;
-                fontSizeInput.max = styleTemplates.page.size.max;
-                fontSizeInput.step = styleTemplates.page.size.step;
-
-                // Trigger input event to apply styles
-                fontSize.dispatchEvent(new Event("input"));
-                fontSizeInput.dispatchEvent(new Event("change"));
-            }
-
-            // Update header sliders constraints
-            if (styleTemplates.header && styleTemplates.header.size) {
-                headerSize.value = styleTemplates.header.clamp(headerSize.value);
-                headerSize.min = styleTemplates.header.size.min;
-                headerSize.max = styleTemplates.header.size.max;
-                headerSize.step = styleTemplates.header.size.step;
-
-                headerSizeInput.value = styleTemplates.header.clamp(headerSizeInput.value);
-                headerSizeInput.min = styleTemplates.header.size.min;
-                headerSizeInput.max = styleTemplates.header.size.max;
-                headerSizeInput.step = styleTemplates.header.size.step;
-
-                // Trigger input event to apply styles
-                headerSize.dispatchEvent(new Event("input"));
-                headerSizeInput.dispatchEvent(new Event("change"));
-            }
-            // Note: Do NOT change slider or input .value properties here
-        }
-
         // Call once to sync constraints on an initial load
-        updateControlsConstraints();
+        updateControls();
 
         // Add change event listener after populating options
         selector.addEventListener("change", () => {
             const selected = selector.value;
             styleTemplates.setCurrentTemplate(selected);
-            updateControlsConstraints();
+            updateControls(true);
         });
+    }
+
+    function updateControls(triggerEvents = false) {
+        const fontSize = document.getElementById("fontSize");
+        const fontSizeInput = document.getElementById("fontSizeInput");
+        const textColor = document.getElementById("textColor");
+
+        const headerSize = document.getElementById("headerSize");
+        const headerSizeInput = document.getElementById("headerSizeInput");
+        const headerColor = document.getElementById("headerColor");
+
+        // Page font size
+        fontSize.min = styleTemplates.page.size.min;
+        fontSize.max = styleTemplates.page.size.max;
+        fontSize.step = styleTemplates.page.size.step;
+        fontSize.value = styleTemplates.page.size.default;
+
+        fontSizeInput.min = styleTemplates.page.size.min;
+        fontSizeInput.max = styleTemplates.page.size.max;
+        fontSizeInput.step = styleTemplates.page.size.step;
+        fontSizeInput.value = styleTemplates.page.size.default;
+
+        // Header font size
+        headerSize.min = styleTemplates.header.size.min;
+        headerSize.max = styleTemplates.header.size.max;
+        headerSize.step = styleTemplates.header.size.step;
+        headerSize.value = styleTemplates.header.size.default;
+
+        headerSizeInput.min = styleTemplates.header.size.min;
+        headerSizeInput.max = styleTemplates.header.size.max;
+        headerSizeInput.step = styleTemplates.header.size.step;
+        headerSizeInput.value = styleTemplates.header.size.default;
+
+        // Colors
+        textColor.value = styleTemplates.page.color.default;
+        headerColor.value = styleTemplates.header.color.default;
+
+        // Font families via Choices.js
+        fontFamilyChoices?.setChoiceByValue(styleTemplates.page.family.default);
+        headerFamilyChoices?.setChoiceByValue(styleTemplates.header.family.default);
+
+        if (triggerEvents) {
+            headerSize.dispatchEvent(new Event("input"));
+            headerSizeInput.dispatchEvent(new Event("change"));
+        }
     }
 
 
@@ -385,33 +389,7 @@
         const headerFamily = document.getElementById("headerFamily");
         const headerColor = document.getElementById("headerColor");
 
-        // Font size range + input
-        fontSize.min = styleTemplates.page.size.min;
-        fontSize.max = styleTemplates.page.size.max;
-        fontSize.step = styleTemplates.page.size.step;
-        fontSize.value = styleTemplates.page.size.default;
-        fontSizeInput.min = styleTemplates.page.size.min;
-        fontSizeInput.max = styleTemplates.page.size.max;
-        fontSizeInput.step = styleTemplates.page.size.step;
-        fontSizeInput.value = styleTemplates.page.size.default;
-
-        // Header size range + input
-        headerSize.min = styleTemplates.header.size.min;
-        headerSize.max = styleTemplates.header.size.max;
-        headerSize.step = styleTemplates.header.size.step;
-        headerSize.value = styleTemplates.header.size.default;
-        headerSizeInput.min = styleTemplates.header.size.min;
-        headerSizeInput.max = styleTemplates.header.size.max;
-        headerSizeInput.step = styleTemplates.header.size.step;
-        headerSizeInput.value = styleTemplates.header.size.default;
-
-        // Colors
-        textColor.value = styleTemplates.page.color.default;
-        headerColor.value = styleTemplates.header.color.default;
-
-        // Font families (dropdowns)
-        fontFamilyChoices.setChoiceByValue(styleTemplates.page.family.default);
-        headerFamilyChoices.setChoiceByValue(styleTemplates.header.family.default);
+        updateControls();
 
         const applyStyles = () => {
             const style = doc.getElementById("dynamic-style");
@@ -434,17 +412,7 @@
         };
 
         function resetStyleControls() {
-            fontSize.value = styleTemplates.page.size.default;
-            fontSizeInput.value = styleTemplates.page.size.default;
-            headerSize.value = styleTemplates.header.size.default;
-            headerSizeInput.value = styleTemplates.header.size.default;
-
-            textColor.value = styleTemplates.page.color.default;
-            headerColor.value = styleTemplates.header.color.default;
-
-            fontFamilyChoices.setChoiceByValue(styleTemplates.page.family.default);
-            headerFamilyChoices.setChoiceByValue(styleTemplates.header.family.default);
-
+            updateControls(true);
             updateStyle();
         }
 
