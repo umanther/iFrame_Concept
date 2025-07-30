@@ -1,0 +1,64 @@
+<svg class="padlock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 28" data-state="locked">
+    <style>
+        path {
+        stroke-width: 2px;
+        fill: none;
+        stroke-linecap: round;
+        }
+
+        circle {
+        stroke: none;
+        }
+
+        .shackle-locked,
+        .shackle-unlocked {
+        display: none;
+        stroke: currentColor;
+        }
+
+        [data-state="locked"] .shackle-locked {
+        display: inline;
+        }
+
+        [data-state="unlocked"] .shackle-unlocked {
+        display: inline;
+        }
+
+        .body {
+        stroke: currentColor;
+        }
+
+        .keyhole {
+        fill: currentColor;
+        }
+
+        [data-state="locked"] {
+        color: red;
+        }
+
+        [data-state="unlocked"] {
+        color: limegreen;
+        }
+    </style>
+
+    <defs>
+        <filter id="blur" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur result="gaussian-blur" in="SourceGraphic" stdDeviation="1"/>
+            <feMerge>
+                <feMergeNode in="SourceGraphic"/>
+                <feMergeNode in="gaussian-blur"/>
+            </feMerge>
+        </filter>
+    </defs>
+
+    <g style="filter: url(#blur);">
+        <!-- Conditional Shackle Only -->
+        <path class="shackle-locked" d="m11 11.5 0-4a1 1 0 018 0l0 4"/>
+        <path class="shackle-unlocked" d="m11 11.5 0-4a1 1 0 00-8 0"/>
+
+        <!-- Shared body and keyhole -->
+        <path class="body" d="m19 24.5h-8a-3-3 0 01-3-3v-7a3-3 0 013-3h8a3 3 0 013 3v7a-3 3 0 01-3 3"/>
+        <circle class="keyhole" cx="15" cy="16.5" r="2"/>
+        <path class="body" d="m15 17.5v3"/>
+    </g>
+</svg>
