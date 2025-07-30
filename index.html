@@ -73,53 +73,59 @@
     <div id="styleControls">
         <div class="styleBlock">
             <h3>Page settings</h3>
-            <label for="fontSize">Font Size: <input type="number" id="fontSizeInput"><span
-                    id="fontSizeUnit">×</span></label><br/>
-            <input type="range" id="fontSize"/>
+            <label for="fontSize">Font Size:
+                <input type="number" id="fontSizeInput" data-control="fontSizeInput">
+                <span id="fontSizeUnit">×</span><br/>
+                <input type="range" id="fontSize" data-control="fontSize"/></label>
 
             <br/><br/>
-            <label for="fontFamily">Font Family:</label>
-            <select id="fontFamily">
-                <option value="sans-serif">Sans</option>
-                <option value="serif">Serif</option>
-                <option value="monospace">Monospace</option>
-                <option value="'Roboto', sans-serif">Roboto</option>
-                <option value="'Open Sans', sans-serif">Open Sans</option>
-                <option value="'Merriweather', serif">Merriweather</option>
-                <option value="'Inconsolata', monospace">Inconsolata</option>
-                <!-- Add more fonts here -->
-            </select>
+            <label for="fontFamily">Font Family:
+                <select id="fontFamily" data-control="fontFamily">
+                    <option value="sans-serif">Sans</option>
+                    <option value="serif">Serif</option>
+                    <option value="'Times New Roman', serif">Times New Roman</option>
+                    <option value="monospace">Monospace</option>
+                    <option value="'Roboto', sans-serif">Roboto</option>
+                    <option value="'Open Sans', sans-serif">Open Sans</option>
+                    <option value="'Merriweather', serif">Merriweather</option>
+                    <option value="'Inconsolata', monospace">Inconsolata</option>
+                    <!-- Add more fonts here -->
+                </select></label>
             <br/>
-            <label>Text Color: <input type="color" id="textColor"/></label>
+            <label for="fontColor">Text Color:
+                <input type="color" id="fontColor" data-control="fontColor"/></label>
         </div>
         <div class="styleBlock">
             <h3>Header settings</h3>
-            <label for="headerSize">Font Size: <input type="number" id="headerSizeInput"><span
-                    id="headerSizeUnit">×</span></label><br/>
-            <input type="range" id="headerSize"/>
+            <label for="headerSize">Font Size:
+                <input type="number" id="headerSizeInput" data-control="headerSizeInput">
+                <span id="headerSizeUnit">×</span><br/>
+                <input type="range" id="headerSize" data-control="headerSize"/></label>
 
             <br/><br/>
-            <label for="headerFamily">Font Family:</label>
-            <select id="headerFamily">
-                <option value="sans-serif">Sans</option>
-                <option value="serif">Serif</option>
-                <option value="monospace">Monospace</option>
-                <option value="'Roboto', sans-serif">Roboto</option>
-                <option value="'Open Sans', sans-serif">Open Sans</option>
-                <option value="'Merriweather', serif">Merriweather</option>
-                <option value="'Inconsolata', monospace">Inconsolata</option>
-                <!-- Add more fonts here -->
-            </select>
+            <label for="headerFamily">Font Family:
+                <select id="headerFamily" data-control="headerFamily">
+                    <option value="sans-serif">Sans</option>
+                    <option value="serif">Serif</option>
+                    <option value="'Times New Roman', serif">Times New Roman</option>
+                    <option value="monospace">Monospace</option>
+                    <option value="'Roboto', sans-serif">Roboto</option>
+                    <option value="'Open Sans', sans-serif">Open Sans</option>
+                    <option value="'Merriweather', serif">Merriweather</option>
+                    <option value="'Inconsolata', monospace">Inconsolata</option>
+                    <!-- Add more fonts here -->
+                </select>
+            </label>
             <br/>
-            <label for="headerColor">Text Color: </label>
-            <input type="color" id="headerColor"/>
+            <label for="headerColor">Text Color:
+                <input type="color" id="headerColor" data-control="headerColor"/></label>
         </div>
 
         <button onclick="printPreview()">Print Preview</button>
         <button onclick="saveAsPDF()">Save as PDF</button>
         <br/><br/>
-        <label for="templateSelector">Select Style Template:</label><br/>
-        <select id="templateSelector"></select><br/>
+        <label for="templateSelector">Select Style Template:<br/>
+            <select id="templateSelector" data-control="templateSelector"></select><br/></label>
         <button id="resetStyles">Reset to template</button>
 
     </div>
@@ -193,7 +199,16 @@
         }
     }
 
-    let styleTemplates;
+    let styleTemplates; // Object to hold style templates loaded from the style-templates.json file
+    let controls; // Object to hold in-page control references
+
+    function getControl(id) {
+        const el = document.getElementById(id);
+        if (!el) {
+            console.warn(`Missing control: #${id}`);
+        }
+        return el;
+    }
 
     async function parseJsonTemplate() {
         function addClampIfNeeded(section) {
@@ -236,12 +251,24 @@
         }
     }
 
-    const frame = document.getElementById("previewFrame");
+    function populateControls() {
+        controls = Object.freeze(
+            Object.fromEntries(
+                Array.from(document.querySelectorAll("[data-control]")).map(el => [el.dataset.control, el])
+            )
+        );
+        console.log("Controls loaded:", controls);
+    }
+
+    const frame = getControl("previewFrame");
 
     window.onload = () => {
         frame.src = "Large HTML page with images.html";
         frame.onload = async () => {
             await parseJsonTemplate();
+
+            // Populate the controls object with in-page controls for use in later functions
+            populateControls();
 
             // Populate the template selector dropdown **before** setting up style controls
             populateTemplateSelector();
@@ -261,7 +288,6 @@
             style.id = "dynamic-style";
             style.setAttribute("data-style-marker", "dynamic")
             doc.head.appendChild(style);
-
         }
 
         // Inject Google Fonts
@@ -276,7 +302,6 @@
             setupStyleControls(); // Fonts already there
         }
     }
-
 
     // function findStyleSheetWithMarker(doc) {
     //     for (let i = 0; i < doc.styleSheets.length; i++) {
@@ -293,8 +318,8 @@
     // }
 
     function populateTemplateSelector() {
-        const selector = document.getElementById("templateSelector");
         // Clear existing options (if any)
+        let selector = controls.templateSelector;
         selector.innerHTML = "";
 
         const names = styleTemplates.getTemplateNames();
@@ -330,80 +355,55 @@
         });
     }
 
-    function updateControls(triggerEvents = false) {
-        const fontSize = document.getElementById("fontSize");
-        const fontSizeInput = document.getElementById("fontSizeInput");
-        const textColor = document.getElementById("textColor");
-
-        const headerSize = document.getElementById("headerSize");
-        const headerSizeInput = document.getElementById("headerSizeInput");
-        const headerColor = document.getElementById("headerColor");
+    function updateControls() {
 
         // Page font size
-        fontSize.min = styleTemplates.page.size.min;
-        fontSize.max = styleTemplates.page.size.max;
-        fontSize.step = styleTemplates.page.size.step;
-        fontSize.value = styleTemplates.page.size.default;
+        controls.fontSize.min = styleTemplates.page.size.min;
+        controls.fontSize.max = styleTemplates.page.size.max;
+        controls.fontSize.step = styleTemplates.page.size.step;
+        controls.fontSize.value = styleTemplates.page.size.default;
 
-        fontSizeInput.min = styleTemplates.page.size.min;
-        fontSizeInput.max = styleTemplates.page.size.max;
-        fontSizeInput.step = styleTemplates.page.size.step;
-        fontSizeInput.value = styleTemplates.page.size.default;
+        controls.fontSizeInput.min = styleTemplates.page.size.min;
+        controls.fontSizeInput.max = styleTemplates.page.size.max;
+        controls.fontSizeInput.step = styleTemplates.page.size.step;
+        controls.fontSizeInput.value = styleTemplates.page.size.default;
 
         // Header font size
-        headerSize.min = styleTemplates.header.size.min;
-        headerSize.max = styleTemplates.header.size.max;
-        headerSize.step = styleTemplates.header.size.step;
-        headerSize.value = styleTemplates.header.size.default;
+        controls.headerSize.min = styleTemplates.header.size.min;
+        controls.headerSize.max = styleTemplates.header.size.max;
+        controls.headerSize.step = styleTemplates.header.size.step;
+        controls.headerSize.value = styleTemplates.header.size.default;
 
-        headerSizeInput.min = styleTemplates.header.size.min;
-        headerSizeInput.max = styleTemplates.header.size.max;
-        headerSizeInput.step = styleTemplates.header.size.step;
-        headerSizeInput.value = styleTemplates.header.size.default;
+        controls.headerSizeInput.min = styleTemplates.header.size.min;
+        controls.headerSizeInput.max = styleTemplates.header.size.max;
+        controls.headerSizeInput.step = styleTemplates.header.size.step;
+        controls.headerSizeInput.value = styleTemplates.header.size.default;
 
         // Colors
-        textColor.value = styleTemplates.page.color.default;
-        headerColor.value = styleTemplates.header.color.default;
+        controls.fontColor.value = styleTemplates.page.color.default;
+        controls.headerColor.value = styleTemplates.header.color.default;
 
         // Font families via Choices.js
         fontFamilyChoices?.setChoiceByValue(styleTemplates.page.family.default);
         headerFamilyChoices?.setChoiceByValue(styleTemplates.header.family.default);
-
-        if (triggerEvents) {
-            headerSize.dispatchEvent(new Event("input"));
-            headerSizeInput.dispatchEvent(new Event("change"));
-        }
     }
-
 
     function setupStyleControls() {
         const doc = frame.contentDocument || frame.contentWindow.document;
-
-        const fontSize = document.getElementById("fontSize");
-        const fontSizeInput = document.getElementById("fontSizeInput");
-        const fontFamily = document.getElementById("fontFamily");
-        const textColor = document.getElementById("textColor");
-
-        const headerSize = document.getElementById("headerSize");
-        const headerSizeInput = document.getElementById("headerSizeInput");
-        const headerFamily = document.getElementById("headerFamily");
-        const headerColor = document.getElementById("headerColor");
-
-        updateControls();
 
         const applyStyles = () => {
             const style = doc.getElementById("dynamic-style");
             style.textContent = `
         body {
-          font-size: ${fontSize.value}em;
-          font-family: ${fontFamily.value};
-          color: ${textColor.value};
+          font-size: ${controls.fontSize.value}em;
+          font-family: ${controls.fontFamily.value};
+          color: ${controls.fontColor.value};
         }
 
         h1 {
-          font-size: ${headerSize.value}em;
-          font-family: ${headerFamily.value};
-          color: ${headerColor.value};
+          font-size: ${controls.headerSize.value}em;
+          font-family: ${controls.headerFamily.value};
+          color: ${controls.headerColor.value};
         }`;
         };
 
@@ -412,41 +412,46 @@
         };
 
         function resetStyleControls() {
-            updateControls(true);
+            updateControls();
             updateStyle();
         }
 
-        document.getElementById("resetStyles").addEventListener("click", resetStyleControls);
+        getControl("resetStyles").addEventListener("click", resetStyleControls);
 
-        fontSize.addEventListener("input", () => {
-            fontSizeInput.value = fontSize.value;
+        controls.fontSize.addEventListener("input", () => {
+            controls.fontSizeInput.value = controls.fontSize.value;
             updateStyle();
         });
-        fontSizeInput.addEventListener("change", () => {
+        controls.fontSizeInput.addEventListener("change", () => {
             if (typeof styleTemplates.page.clamp === "function") {
-                fontSizeInput.value = styleTemplates.page.clamp(parseFloat(fontSizeInput.value));
+                controls.fontSizeInput.value = styleTemplates.page.clamp(parseFloat(controls.fontSizeInput.value));
             }
-            fontSize.value = fontSizeInput.value;
+            controls.fontSize.value = controls.fontSizeInput.value;
             updateStyle();
         });
 
-        textColor.addEventListener("input", updateStyle);
-        fontFamily.addEventListener("change", updateStyle);
+        controls.fontColor.addEventListener("input", updateStyle);
+        controls.fontFamily.addEventListener("change", updateStyle);
 
-        headerSize.addEventListener("input", () => {
-            headerSizeInput.value = headerSize.value;
+        controls.headerSize.addEventListener("input", () => {
+            controls.headerSizeInput.value = controls.headerSize.value;
             updateStyle();
         });
-        headerSizeInput.addEventListener("change", () => {
+        controls.headerSizeInput.addEventListener("change", () => {
             if (typeof styleTemplates.header.clamp === "function") {
-                headerSizeInput.value = styleTemplates.header.clamp(parseFloat(headerSizeInput.value));
+                controls.headerSizeInput.value = styleTemplates.header.clamp(parseFloat(controls.headerSizeInput.value));
             }
-            headerSize.value = headerSizeInput.value;
+            controls.headerSize.value = controls.headerSizeInput.value;
             updateStyle();
         });
 
-        headerColor.addEventListener("input", updateStyle);
-        headerFamily.addEventListener("change", updateStyle);
+        controls.headerColor.addEventListener("input", updateStyle);
+        controls.headerFamily.addEventListener("change", updateStyle);
+
+        controls.templateSelector.addEventListener("change", updateStyle)
+
+        updateControls(); // Verify controls are set to current template
+        updateStyle(); // Verify applied style is the current template
     }
 
     function printPreview() {
@@ -506,18 +511,17 @@
     let fontFamilyChoices;
     let headerFamilyChoices;
 
-    document.addEventListener("DOMContentLoaded", function () {
-        fontFamilyChoices = new Choices("#fontFamily", {
+    function initChoice(selector) {
+        return new Choices(selector, {
             searchEnabled: true,
             itemSelectText: "",
             shouldSort: true
         });
+    }
 
-        headerFamilyChoices = new Choices("#headerFamily", {
-            searchEnabled: true,
-            itemSelectText: "",
-            shouldSort: true
-        });
+    document.addEventListener("DOMContentLoaded", () => {
+        fontFamilyChoices = initChoice("#fontFamily");
+        headerFamilyChoices = initChoice("#headerFamily");
     });
 </script>
 
