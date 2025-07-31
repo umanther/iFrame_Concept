@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 28" data-locked="false" data-blur="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 28" data-locked="true" data-blur="true">
     <style>
         :root {
         --padlock-locked-color: red;
@@ -46,7 +46,7 @@
         }
 
         [data-locked="true"] feFlood {
-        flood-color: var(--padlock-locked-blur-color);
+        flood-color: var(--padlock-locked-blur-color, red);
         }
 
         [data-locked="false"] {
@@ -54,7 +54,7 @@
         }
 
         [data-locked="false"] feFlood {
-        flood-color: var(--padlock-unlocked-blur-color);
+        flood-color: var(--padlock-unlocked-blur-color, limegreen);
         }
 
         [data-blur="true"] g {
