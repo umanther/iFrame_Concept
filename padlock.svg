@@ -1,8 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 28" data-locked="true" data-blur="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 28" data-locked="false" data-blur="true">
     <style>
         :root {
         --padlock-locked-color: red;
+        --padlock-locked-blur-color: var(--padlock-locked-color);
         --padlock-unlocked-color: limegreen;
+        --padlock-unlocked-blur-color: var(--padlock-unlocked-color);
         }
 
         path {
@@ -43,8 +45,16 @@
         color: var(--padlock-locked-color, red);
         }
 
+        [data-locked="true"] feFlood {
+        flood-color: var(--padlock-locked-blur-color);
+        }
+
         [data-locked="false"] {
         color: var(--padlock-unlocked-color, limegreen);
+        }
+
+        [data-locked="false"] feFlood {
+        flood-color: var(--padlock-unlocked-blur-color);
         }
 
         [data-blur="true"] g {
@@ -58,10 +68,12 @@
 
     <defs>
         <filter id="blur" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur result="gaussian-blur" in="SourceGraphic" stdDeviation="1"/>
+            <feFlood result="blur-color"/>
+            <feComposite result="color-mask" in="blur-color" in2="SourceAlpha" operator="in"/>
+            <feGaussianBlur result="gaussian-blur" in="color-mask" stdDeviation="1"/>
             <feMerge>
-                <feMergeNode in="SourceGraphic"/>
                 <feMergeNode in="gaussian-blur"/>
+                <feMergeNode in="SourceGraphic"/>
             </feMerge>
         </filter>
     </defs>
