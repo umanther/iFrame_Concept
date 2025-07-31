@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 28" data-locked="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 28" data-locked="true" data-blur="true">
     <style>
         :root {
-        --locked-color: red;
-        --unlocked-color: limegreen;
+        --padlock-locked-color: red;
+        --padlock-unlocked-color: limegreen;
         }
 
         path {
@@ -40,11 +40,19 @@
         }
 
         [data-locked="true"] {
-        color: var(--locked-color);
+        color: var(--padlock-locked-color, red);
         }
 
         [data-locked="false"] {
-        color: var(--unlocked-color);
+        color: var(--padlock-unlocked-color, limegreen);
+        }
+
+        [data-blur="true"] g {
+        filter: url(#blur);
+        }
+
+        [data-blur="false"] g {
+        filter: none;
         }
     </style>
 
@@ -58,7 +66,7 @@
         </filter>
     </defs>
 
-    <g style="filter: url(#blur);">
+    <g>
         <path class="shackle-locked" d="m11 11.5 0-4a1 1 0 018 0l0 4"/>
         <path class="shackle-unlocked" d="m11 11.5 0-4a1 1 0 00-8 0"/>
         <path class="body" d="m19 24.5h-8a-3-3 0 01-3-3v-7a3-3 0 013-3h8a3 3 0 013 3v7a-3 3 0 01-3 3"/>
