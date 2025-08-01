@@ -15,23 +15,41 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
 
     <style>
-        body {
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
             font-family: sans-serif;
-            background-color: #f8f8f8;
-            margin: 2em;
+            background-color: #ddddff;
         }
 
         #container {
             display: flex;
-            gap: 1em;
+            height: 100vh;
+            overflow: hidden;
         }
 
         #styleControls {
-            flex: 0 0 250px;
-            padding: .5em;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 0.5em;
+            display: flex;
+            flex-direction: column;
+            width: 300px;
+            max-height: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+            padding: 1em;
+            background-color: #ddf;
+        }
+
+        #controlContainer {
+            overflow-y: auto;
+            flex-grow: 1;
+            margin-bottom: 1em;
+        }
+
+        #functionButtons {
+            margin-top: auto;
+            padding-top: 1em;
+            border-top: 1px solid #ccc;
         }
 
         #fontSizeInput, #headerSizeInput {
@@ -43,22 +61,28 @@
         }
 
         .styleBlock {
+            position: relative;
+            margin-top: 1em;
+            margin-bottom: .5em;
+            padding: 1em .5em .5em .5em;
             border: 1px solid #888;
             border-radius: 0.5em;
-            padding: .5em;
-            margin-bottom: .5em;
         }
 
         .styleBlock h3 {
-            margin-bottom: 0.5em;
+            position: absolute;
+            top: -0.75em;
             margin-top: 0;
+            margin-bottom: 0.5em;
+            background: #ddf
         }
 
         iframe {
             flex-grow: 1;
-            height: 600px;
-            border: 1px solid #ccc;
-            background: #fff;
+            border: 2px dashed #acf;
+            border-radius: 8px;
+            margin: 10px;
+            height: calc(100% - 20px);
         }
 
         .choices {
@@ -68,69 +92,72 @@
 </head>
 <body>
 
-<h1>PDF Export Tool</h1>
 <div id="container">
     <div id="styleControls">
-        <div class="styleBlock">
-            <h3>Page settings</h3>
-            <label for="fontSize">Font Size:
-                <input type="number" id="fontSizeInput" data-control="fontSizeInput">
-                <span id="fontSizeUnit">×</span><br/>
-                <input type="range" id="fontSize" data-control="fontSize"/></label>
+        <div id="controlContainer">
+            <div class="styleBlock">
+                <h3>Page settings</h3>
+                <label for="fontSize">Font Size:
+                    <input type="number" id="fontSizeInput" data-control="fontSizeInput">
+                    <span id="fontSizeUnit">×</span><br/>
+                    <input type="range" id="fontSize" data-control="fontSize"/></label>
 
-            <br/><br/>
-            <label for="fontFamily">Font Family:
-                <select id="fontFamily" data-control="fontFamily">
-                    <option value="sans-serif">Sans</option>
-                    <option value="serif">Serif</option>
-                    <option value="'Times New Roman', serif">Times New Roman</option>
-                    <option value="monospace">Monospace</option>
-                    <option value="'Roboto', sans-serif">Roboto</option>
-                    <option value="'Open Sans', sans-serif">Open Sans</option>
-                    <option value="'Merriweather', serif">Merriweather</option>
-                    <option value="'Inconsolata', monospace">Inconsolata</option>
-                    <!-- Add more fonts here -->
-                </select></label>
-            <br/>
-            <label for="fontColor">Text Color:
-                <input type="color" id="fontColor" data-control="fontColor"/></label>
+                <br/><br/>
+                <label for="fontFamily">Font Family:
+                    <select id="fontFamily" data-control="fontFamily">
+                        <option value="sans-serif">Sans</option>
+                        <option value="serif">Serif</option>
+                        <option value="'Times New Roman', serif">Times New Roman</option>
+                        <option value="monospace">Monospace</option>
+                        <option value="'Roboto', sans-serif">Roboto</option>
+                        <option value="'Open Sans', sans-serif">Open Sans</option>
+                        <option value="'Merriweather', serif">Merriweather</option>
+                        <option value="'Inconsolata', monospace">Inconsolata</option>
+                        <!-- Add more fonts here -->
+                    </select></label>
+                <br/>
+                <label for="fontColor">Text Color:
+                    <input type="color" id="fontColor" data-control="fontColor"/></label>
+            </div>
+            <div class="styleBlock">
+                <h3>Header settings</h3>
+                <label for="headerSize">Font Size:
+                    <input type="number" id="headerSizeInput" data-control="headerSizeInput">
+                    <span id="headerSizeUnit">×</span><br/>
+                    <input type="range" id="headerSize" data-control="headerSize"/></label>
+
+                <br/><br/>
+                <label for="headerFamily">Font Family:
+                    <select id="headerFamily" data-control="headerFamily">
+                        <option value="sans-serif">Sans</option>
+                        <option value="serif">Serif</option>
+                        <option value="'Times New Roman', serif">Times New Roman</option>
+                        <option value="monospace">Monospace</option>
+                        <option value="'Roboto', sans-serif">Roboto</option>
+                        <option value="'Open Sans', sans-serif">Open Sans</option>
+                        <option value="'Merriweather', serif">Merriweather</option>
+                        <option value="'Inconsolata', monospace">Inconsolata</option>
+                        <!-- Add more fonts here -->
+                    </select>
+                </label>
+                <br/>
+                <label for="headerColor">Text Color:
+                    <input type="color" id="headerColor" data-control="headerColor"/></label>
+            </div>
         </div>
-        <div class="styleBlock">
-            <h3>Header settings</h3>
-            <label for="headerSize">Font Size:
-                <input type="number" id="headerSizeInput" data-control="headerSizeInput">
-                <span id="headerSizeUnit">×</span><br/>
-                <input type="range" id="headerSize" data-control="headerSize"/></label>
 
+        <div id="functionButtons">
+            <button onclick="printPreview()">Print Preview</button>
+            <button onclick="saveAsPDF()">Save as PDF</button>
             <br/><br/>
-            <label for="headerFamily">Font Family:
-                <select id="headerFamily" data-control="headerFamily">
-                    <option value="sans-serif">Sans</option>
-                    <option value="serif">Serif</option>
-                    <option value="'Times New Roman', serif">Times New Roman</option>
-                    <option value="monospace">Monospace</option>
-                    <option value="'Roboto', sans-serif">Roboto</option>
-                    <option value="'Open Sans', sans-serif">Open Sans</option>
-                    <option value="'Merriweather', serif">Merriweather</option>
-                    <option value="'Inconsolata', monospace">Inconsolata</option>
-                    <!-- Add more fonts here -->
-                </select>
-            </label>
-            <br/>
-            <label for="headerColor">Text Color:
-                <input type="color" id="headerColor" data-control="headerColor"/></label>
+            <label for="templateSelector">Select Style Template:<br/>
+                <select id="templateSelector" data-control="templateSelector"></select><br/></label>
+            <button id="resetStyles">Reset to template</button>
         </div>
-
-        <button onclick="printPreview()">Print Preview</button>
-        <button onclick="saveAsPDF()">Save as PDF</button>
-        <br/><br/>
-        <label for="templateSelector">Select Style Template:<br/>
-            <select id="templateSelector" data-control="templateSelector"></select><br/></label>
-        <button id="resetStyles">Reset to template</button>
-
     </div>
 
     <iframe id="previewFrame"></iframe>
+
 </div>
 
 <script>
@@ -199,8 +226,37 @@
         }
     }
 
+    async function loadPadlockSVG() {
+        try {
+            const response = await fetch('padlock.svg');
+            const svgText = await response.text();
+
+            const parser = new DOMParser();
+            const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
+            const svgElement = svgDoc.querySelector("svg");
+
+            if (!svgElement) {
+                throw new Error("SVG root <svg> not found");
+            }
+
+            padlockTemplate = svgElement;
+            console.log("Padlock SVG loaded:", padlockTemplate);
+        } catch (error) {
+            console.error("Failed to load padlock.svg:", error);
+        }
+    }
+
+    function createPadlockInstance() {
+        if (!padlockTemplate) {
+            console.warn("Padlock template not loaded yet.");
+            return null;
+        }
+        return padlockTemplate.cloneNode(true);
+    }
+
     let styleTemplates; // Object to hold style templates loaded from the style-templates.json file
     let controls; // Object to hold in-page control references
+    let padlockTemplate; // Template variable of padlock.svg
 
     function getControl(id) {
         const el = document.getElementById(id);
@@ -265,7 +321,11 @@
     window.onload = () => {
         frame.src = "Large HTML page with images.html";
         frame.onload = async () => {
+            // Load templates from style-templates.json
             await parseJsonTemplate();
+
+            // Load padlock.svg into global variable
+            await loadPadlockSVG();
 
             // Populate the controls object with in-page controls for use in later functions
             populateControls();
@@ -281,6 +341,11 @@
 
     function injectStyleSheet() {
         const doc = frame.contentDocument || frame.contentWindow.document;
+
+        // Make the default background white instead of transparent
+        let bgColor = doc.createElement('style')
+        bgColor.innerHTML = "html { background-color: white }";
+        doc.head.appendChild(bgColor);
 
         // Add the style tag if it doesn't exist
         if (!doc.getElementById("dynamic-style")) {
