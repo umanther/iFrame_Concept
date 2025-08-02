@@ -212,6 +212,8 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
         /** Set value for control set
          * @param {number} value */
         set(value) {
+            value = clamp(label.min, label.max, value);
+
             const stringVal = value.toString();
             sizeInput.value = stringVal;
             sizeSlider.value = stringVal;
@@ -247,22 +249,22 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
         }
     });
 
-    padlock.addEventListener("click", (event) => {
+    padlock.addEventListener("click", () => {
         const currentState = label.locked;
         label.locked = !currentState;
 
         //TODO: disable controls, visually and functionally
     });
 
-    sizeInput.addEventListener("input", (event) => {
+    sizeInput.addEventListener("input", () => {
         label.value = sizeInput.value;
     });
 
-    sizeSlider.addEventListener("input", (event) => {
+    sizeSlider.addEventListener("input", () => {
         label.value = sizeSlider.value;
     });
 
-    unitSpan.addEventListener("click", (event) => {
+    unitSpan.addEventListener("click", () => {
         if (unitSpan.textContent === 'em') {
             unitSpan.textContent = 'px';
             label.setParams(emToPx(label.min), emToPx(label.max), emToPx(label.step))
