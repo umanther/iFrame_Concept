@@ -33,6 +33,7 @@
             display: flex;
             flex-direction: column;
             width: 300px;
+            min-height: 0;
             max-height: 100%;
             overflow: hidden;
             box-sizing: border-box;
@@ -74,6 +75,7 @@
             top: -0.75em;
             margin-top: 0;
             margin-bottom: 0.5em;
+            padding-inline: 0.25em;
             background: #ddf
         }
 
@@ -103,8 +105,8 @@
                     <input type="range" id="fontSize" data-control="fontSize"/></label>
 
                 <br/><br/>
-                <label for="fontFamily">Font Family:
-                    <select id="fontFamily" data-control="fontFamily">
+                <label for="pageFamily">Font Family:
+                    <select id="pageFamily" data-control="pageFamily">
                         <option value="sans-serif">Sans</option>
                         <option value="serif">Serif</option>
                         <option value="'Times New Roman', serif">Times New Roman</option>
@@ -116,8 +118,8 @@
                         <!-- Add more fonts here -->
                     </select></label>
                 <br/>
-                <label for="fontColor">Text Color:
-                    <input type="color" id="fontColor" data-control="fontColor"/></label>
+                <label for="pageColor">Text Color:
+                    <input type="color" id="pageColor" data-control="pageColor"/></label>
             </div>
             <div class="styleBlock">
                 <h3>Header settings</h3>
@@ -160,7 +162,11 @@
 
 </div>
 
-<script>
+<script type="module">
+    import {setDebug, debugLog} from "./scripts/debugLog.js";
+
+    setDebug(true);
+
     class StyleTemplates {
         constructor(templates = []) {
             this.templates = templates; // Accept initial templates optionally
@@ -228,7 +234,7 @@
 
     async function loadPadlockSVG() {
         try {
-            const response = await fetch('padlock.svg');
+            const response = await fetch('assets/padlock.svg');
             const svgText = await response.text();
 
             const parser = new DOMParser();
@@ -240,18 +246,125 @@
             }
 
             padlockTemplate = svgElement;
-            console.log("Padlock SVG loaded:", padlockTemplate);
+            debugLog("Padlock SVG loaded:", padlockTemplate);
         } catch (error) {
             console.error("Failed to load padlock.svg:", error);
         }
     }
 
+    // Planned to be used to populate the page with padlock controls
     function createPadlockInstance() {
         if (!padlockTemplate) {
             console.warn("Padlock template not loaded yet.");
             return null;
         }
-        return padlockTemplate.cloneNode(true);
+        const padlock = padlockTemplate.cloneNode(true);
+
+        // Attach the .lock() method to this instance
+        padlock.lock = function (lockState) {
+            if (lockState === 'true' || lockState === 'false') {
+                this.setAttribute("data-locked", lockState);
+            } else {
+                // Do nothing for invalid input
+                console.warn("padlock.lock() expects 'true' or 'false' as string");
+            }
+        };
+
+        padlock.lock("false");
+
+        // Add toggle behavior on click
+        padlock.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const currentState = padlock.getAttribute('data-locked');
+            const newState = (currentState === 'true') ? 'false' : 'true';
+
+            if (typeof padlock.lock === 'function') {
+                padlock.lock(newState);
+            }
+
+            const label = padlock.nextElementSibling;
+            if (!label || label.tagName.toLowerCase() !== 'label') return;
+
+            // Disable pointer events on the label and all its child elements
+            label.style.pointerEvents = newState === 'true' ? 'none' : '';
+            label.style.opacity = newState === 'true' ? '0.6' : '';
+
+            // Set aria-disabled for accessibility on the label and its descendants
+            label.setAttribute('aria-disabled', newState === 'true' ? 'true' : 'false');
+            label.querySelectorAll('*').forEach(el => {
+                el.setAttribute('aria-disabled', newState === 'true' ? 'true' : 'false');
+            });
+        });
+
+
+        return padlock;
+    }
+
+    function insertPadlocks() {
+        if (!padlockTemplate) {
+            console.warn("Padlock SVG not loaded yet.");
+            return;
+        }
+
+        const labels = document.querySelectorAll(".styleBlock label");
+
+        labels.forEach(label => {
+            // Prevent double insertion by checking if previous sibling is a padlock
+            if (label.previousElementSibling?.classList.contains("padlock")) return;
+
+            const padlock = createPadlockInstance();
+            if (!padlock) return;
+
+            padlock.classList.add("padlock");
+            padlock.style.width = "1em";
+            padlock.style.height = "1em";
+            padlock.style.verticalAlign = "middle";
+            padlock.style.marginRight = "0.3em";
+            padlock.style.cursor = "pointer";
+            padlock.style.userSelect = "none";
+
+            // Prevent padlock from hijacking focus or click behavior
+            ['mousedown', 'click', 'dblclick'].forEach(evt =>
+                padlock.addEventListener(evt, e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                })
+            );
+
+            // Insert the padlock directly before the label
+            label.parentNode.insertBefore(padlock, label);
+        });
+
+        debugLog("Padlocks inserted before all labels.");
+    }
+
+    function applyLockToPadlock(controlEl, lockState) {
+        if (!controlEl || (lockState !== 'true' && lockState !== 'false')) return;
+
+        const label = controlEl.closest('label');
+        if (!label) {
+            console.warn('Control element has no enclosing label:', controlEl);
+            return;
+        }
+
+        const padlock = label.previousElementSibling;
+        if (!padlock || !padlock.classList.contains("padlock")) {
+            console.warn('Padlock not found before label for control:', controlEl);
+            return;
+        }
+
+        if (typeof padlock.lock === 'function') {
+            padlock.lock(lockState);
+            const isLocked = lockState === 'true';
+
+            // Disable or enable all interactive children in the label
+            const elementsToToggle = label.querySelectorAll('input, select, textarea, button');
+            elementsToToggle.forEach(el => el.disabled = isLocked);
+        } else {
+            console.warn('Padlock does not have a .lock() method:', padlock);
+        }
     }
 
     let styleTemplates; // Object to hold style templates loaded from the style-templates.json file
@@ -313,7 +426,7 @@
                 Array.from(document.querySelectorAll("[data-control]")).map(el => [el.dataset.control, el])
             )
         );
-        console.log("Controls loaded:", controls);
+        debugLog("Controls loaded:", controls);
     }
 
     const frame = getControl("previewFrame");
@@ -330,6 +443,9 @@
             // Populate the controls object with in-page controls for use in later functions
             populateControls();
 
+            // Insert padlocks to use to lock controls
+            insertPadlocks();
+
             // Populate the template selector dropdown **before** setting up style controls
             populateTemplateSelector();
 
@@ -345,7 +461,7 @@
         // Make the default background white instead of transparent
         let bgColor = doc.createElement('style')
         bgColor.innerHTML = "html { background-color: white }";
-        doc.head.appendChild(bgColor);
+        doc.head.firstChild.before(bgColor);
 
         // Add the style tag if it doesn't exist
         if (!doc.getElementById("dynamic-style")) {
@@ -361,7 +477,7 @@
             link.id = "google-fonts";
             link.rel = "stylesheet";
             link.href = "https://fonts.googleapis.com/css2?family=Roboto&family=Open+Sans&family=Merriweather&family=Inconsolata&display=swap";
-            link.onload = setupStyleControls; // 🟢 Wait for fonts to load
+            link.onload = setupStyleControls; // Wait for fonts to load
             doc.head.appendChild(link);
         } else {
             setupStyleControls(); // Fonts already there
@@ -416,7 +532,7 @@
         selector.addEventListener("change", () => {
             const selected = selector.value;
             styleTemplates.setCurrentTemplate(selected);
-            updateControls(true);
+            updateControls();
         });
     }
 
@@ -427,6 +543,8 @@
         controls.fontSize.max = styleTemplates.page.size.max;
         controls.fontSize.step = styleTemplates.page.size.step;
         controls.fontSize.value = styleTemplates.page.size.default;
+
+        applyLockToPadlock(controls.fontSize, 'true');
 
         controls.fontSizeInput.min = styleTemplates.page.size.min;
         controls.fontSizeInput.max = styleTemplates.page.size.max;
@@ -445,11 +563,11 @@
         controls.headerSizeInput.value = styleTemplates.header.size.default;
 
         // Colors
-        controls.fontColor.value = styleTemplates.page.color.default;
+        controls.pageColor.value = styleTemplates.page.color.default;
         controls.headerColor.value = styleTemplates.header.color.default;
 
         // Font families via Choices.js
-        fontFamilyChoices?.setChoiceByValue(styleTemplates.page.family.default);
+        pageFamilyChoices?.setChoiceByValue(styleTemplates.page.family.default);
         headerFamilyChoices?.setChoiceByValue(styleTemplates.header.family.default);
     }
 
@@ -461,8 +579,8 @@
             style.textContent = `
         body {
           font-size: ${controls.fontSize.value}em;
-          font-family: ${controls.fontFamily.value};
-          color: ${controls.fontColor.value};
+          font-family: ${controls.pageFamily.value};
+          color: ${controls.pageColor.value};
         }
 
         h1 {
@@ -495,8 +613,8 @@
             updateStyle();
         });
 
-        controls.fontColor.addEventListener("input", updateStyle);
-        controls.fontFamily.addEventListener("change", updateStyle);
+        controls.pageColor.addEventListener("input", updateStyle);
+        controls.pageFamily.addEventListener("change", updateStyle);
 
         controls.headerSize.addEventListener("input", () => {
             controls.headerSizeInput.value = controls.headerSize.value;
@@ -571,24 +689,7 @@
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<script>
-    // Declare in global scope
-    let fontFamilyChoices;
-    let headerFamilyChoices;
-
-    function initChoice(selector) {
-        return new Choices(selector, {
-            searchEnabled: true,
-            itemSelectText: "",
-            shouldSort: true
-        });
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        fontFamilyChoices = initChoice("#fontFamily");
-        headerFamilyChoices = initChoice("#headerFamily");
-    });
-</script>
+<script src="scripts/applyChoicesClass.js"></script>
 
 </body>
 </html>
