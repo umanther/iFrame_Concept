@@ -85,7 +85,10 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
 
     //-------------------------------------UTILITY FUNCTION-------------------------------------
 
-    let defaultPxSize = 16;
+    const defaultPxSize = 16;
+    // These are in em.  Min and max px would be appropriately converted
+    const minimumMin = 0;
+    const maximumMax = 10;
 
     /** Converts px to em using default font size
      *
@@ -113,6 +116,18 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
      */
     function roundTo(value, precision) {
         return Math.round(value * (10 ** precision)) / (10 ** precision);
+    }
+
+    /**
+     * Creates an <option> element with the given value.
+     *
+     * @param {string|number} value - The value to assign to the option.
+     * @returns {HTMLOptionElement} The created option element.
+     */
+    function createOption(value) {
+        const option = document.createElement('option');
+        option.value = value.toString();
+        return option;
     }
 
     let setID = generateID(cssSelector, cssParameter);
@@ -147,12 +162,19 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
     const unitSpan = document.createElement('span');
     unitSpan.id = setID + "-span";
     unitSpan.textContent = "em";
+    unitSpan.style.display = "inline-block";
     unitSpan.style.padding = '.25em';
+    unitSpan.style.width = '1em';
     unitSpan.style.userSelect = 'none';
+
+    const dataList = document.createElement("datalist");
+    dataList.id = setID + '-dataList';
 
     const sizeSlider = document.createElement("input");
     sizeSlider.id = setID + "-slider";
     sizeSlider.type = "range";
+    sizeSlider.style.width = "100%";
+    sizeSlider.setAttribute('list', dataList.id);
 
     //-------------------------------------ADD PROPERTIES-------------------------------------
 
@@ -161,9 +183,20 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
             return Number(sizeInput.min);
         },
         set(value) {
-            const stringVal = value.toString();
-            sizeInput.min = stringVal;
-            sizeSlider.min = stringVal;
+            // Convert minimumMin to current unit
+            let unitMin = unitSpan.textContent === 'px' ? emToPx(minimumMin) : minimumMin;
+
+            let clamped = Math.max(unitMin, Number(value));
+
+            // Clamp to max as well
+            if (clamped > div.max) {
+                clamped = div.max;
+            }
+
+            sizeInput.min = clamped.toString();
+            sizeSlider.min = clamped.toString();
+
+            div.refreshOptions();
         }
     });
     Object.defineProperty(div, 'max', {
@@ -171,9 +204,19 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
             return Number(sizeInput.max);
         },
         set(value) {
-            const stringVal = value.toString();
-            sizeInput.max = stringVal;
-            sizeSlider.max = stringVal;
+            // Convert maximumMax to current unit
+            let unitMax = unitSpan.textContent === 'px' ? emToPx(maximumMax) : maximumMax;
+
+            let clamped = Math.min(unitMax, Number(value));
+
+            if (clamped < div.min) {
+                clamped = div.min;
+            }
+
+            sizeInput.max = clamped.toString();
+            sizeSlider.max = clamped.toString();
+
+            div.refreshOptions();
         }
     });
     Object.defineProperty(div, 'step', {
@@ -195,10 +238,18 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
      * @param {number} min - Minimum font size
      * @param {number} step - Font size step value */
     div.setParams = (min, max, step) => {
+        // Convert minimumMin and maximumMax to current unit
+        const unitMin = unitSpan.textContent === 'px' ? emToPx(minimumMin) : minimumMin;
+        const unitMax = unitSpan.textContent === 'px' ? emToPx(maximumMax) : maximumMax;
+
+        min = Math.max(unitMin, min);
+        max = Math.min(unitMax, max);
+        if (min > max) max = min;
+
         div.min = min;
         div.max = max;
         div.step = step;
-    }
+    };
 
     Object.defineProperty(div, 'value', {
         /** Get value of control set
@@ -265,6 +316,85 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
         }
     });
 
+    /**
+     * Adds a single <option> element to the datalist.
+     *
+     * @param {string|number} value - The value to assign to the option.
+     */
+    div.addOption = (value) => {
+        dataList.appendChild(createOption(value));
+    };
+    /**
+     * Adds multiple <option> elements to the datalist from any iterable source.
+     *
+     * The function extracts a value from each item using the following rules:
+     * - If the item is a primitive, it is used directly.
+     * - If the item is an array, the first element is used.
+     * - If the item is an object with a `value` key, that value is used.
+     * - Otherwise, the first key of the object is used as the value.
+     *
+     * @param {Iterable<any>} values - An iterable collection of values or value-containing items.
+     */
+    div.addOptions = (values) => {
+        const frag = new DocumentFragment();
+
+        for (const item of values) {
+            let value;
+
+            if (typeof item === 'object' && item !== null) {
+                if (Array.isArray(item)) {
+                    value = item[0];
+                } else if ('value' in item) {
+                    value = item.value;
+                } else {
+                    const keys = Object.keys(item);
+                    value = keys.length > 0 ? keys[0] : '';
+                    // Optionally: console.warn('Item has no keys:', item);
+                }
+            } else {
+                value = item;
+            }
+
+            frag.appendChild(createOption(value));
+        }
+
+        dataList.appendChild(frag);
+    };
+
+
+    /** Clears all Options from the dataList */
+    div.clearOptions = () => {
+        dataList.innerHTML = '';
+    };
+    /** Repopulates datalist based on current min, max, and unit.
+     * Converts values to em when unit is px. */
+    div.refreshOptions = () => {
+        div.clearOptions();
+
+        const step = 1;
+
+        // Convert min and max to em as base unit for generating options
+        let minEm = unitSpan.textContent === 'px' ? pxToEm(div.min) : div.min;
+        let maxEm = unitSpan.textContent === 'px' ? pxToEm(div.max) : div.max;
+
+        // Normalize minEm and maxEm so minEm <= maxEm
+        if (minEm > maxEm) [minEm, maxEm] = [maxEm, minEm];
+
+        // Number of steps (inclusive)
+        const count = Math.floor((maxEm - minEm) / step) + 1;
+
+        // Generate array in em
+        const emValues = Array.from({length: count}, (_, i) => minEm + i * step);
+
+        // Convert back to px if unit is px; otherwise keep em
+        const values = emValues.map(v =>
+            unitSpan.textContent === 'px' ? emToPx(v) : v
+        ).map(v => roundTo(v, 1));
+
+        div.addOptions(values);
+    };
+
+
     //-------------------------------------EVENT LISTENERS-------------------------------------
 
     padlock.addEventListener("click", () => {
@@ -309,6 +439,7 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
     label.appendChild(unitSpan);
     label.appendChild(breakEl.cloneNode());
     label.appendChild(sizeSlider);
+    label.appendChild(dataList);
 
     div.append(padlock);
     div.append(label);
