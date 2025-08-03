@@ -71,17 +71,6 @@ function splitID(ID) {
     };
 }
 
-/** Clamps the value between min and max.
- *
- * @param {number} min - Minium value allowed.
- * @param {number} max - Maximum value allowed.
- * @param {number} value - Value to clamped.
- * @returns {number}
- */
-function clamp(min, max, value) {
-    return Math.min(Math.max(value, min), max);
-}
-
 /** Generates a size control set.
  *
  * @param {string} cssSelector - String denoting the CSS Selector this control sets.
@@ -93,6 +82,9 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
     if (!padlockTemplate) {
         throw new Error("Padlock SVG not loaded yet — wait for controlsReady before calling.");
     }
+
+    //-------------------------------------UTILITY FUNCTION-------------------------------------
+
     let defaultPxSize = 16;
 
     /** Converts px to em using default font size
@@ -125,7 +117,14 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
 
     let setID = generateID(cssSelector, cssParameter);
 
+    //-------------------------------------DEFINE COMPONENTS-------------------------------------
+
     const breakEl = document.createElement("br");
+
+    const div = document.createElement("div");
+    div.id = setID;
+    div.style.display = "inline-block";
+
     const padlock = padlockTemplate.cloneNode(true);
     padlock.id = setID + '-padlock';
     padlock.style.width = '1.5em';
@@ -135,14 +134,14 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
     padlock.setAttribute('data-locked', 'false');
 
     const label = document.createElement("label");
-    label.id = setID;
+    label.id = setID + '-label';
     label.textContent = labelText;
     label.setAttribute("for", setID + "-input");
+    label.style.userSelect = 'none';
 
     const sizeInput = document.createElement("input");
-    sizeInput.setAttribute("id", setID + "-input");
-    sizeInput.type = "number";
     sizeInput.id = setID + '-input';
+    sizeInput.type = "number";
     sizeInput.style.width = "2.5em";
 
     const unitSpan = document.createElement('span');
@@ -155,9 +154,10 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
     sizeSlider.id = setID + "-slider";
     sizeSlider.type = "range";
 
-    Object.defineProperty(label, 'min', {
+    //-------------------------------------ADD PROPERTIES-------------------------------------
+
+    Object.defineProperty(div, 'min', {
         get() {
-            // Return the current max from one of the inputs (assuming they're synced)
             return Number(sizeInput.min);
         },
         set(value) {
@@ -166,9 +166,8 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
             sizeSlider.min = stringVal;
         }
     });
-    Object.defineProperty(label, 'max', {
+    Object.defineProperty(div, 'max', {
         get() {
-            // Return the current max from one of the inputs (assuming they're synced)
             return Number(sizeInput.max);
         },
         set(value) {
@@ -177,11 +176,10 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
             sizeSlider.max = stringVal;
         }
     });
-    Object.defineProperty(label, 'step', {
+    Object.defineProperty(div, 'step', {
         /** Get step value of control set
          * @returns {number} */
         get() {
-            // Return the current max from one of the inputs (assuming they're synced)
             return Number(sizeInput.step);
         },
         /** Set step value for control set
@@ -196,47 +194,65 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
      * @param {number} max - Maximum font size
      * @param {number} min - Minimum font size
      * @param {number} step - Font size step value */
-    label.setParams = (min, max, step) => {
-        label.min = min;
-        label.max = max;
-        label.step = step;
+    div.setParams = (min, max, step) => {
+        div.min = min;
+        div.max = max;
+        div.step = step;
     }
 
-    Object.defineProperty(label, 'value', {
+    Object.defineProperty(div, 'value', {
         /** Get value of control set
          * @returns {number} */
         get() {
-            // Return the current max from one of the inputs (assuming they're synced)
             return Number(sizeInput.value);
         },
         /** Set value for control set
          * @param {number} value */
         set(value) {
-            value = clamp(label.min, label.max, value);
+            value = Math.min(Math.max(value, div.min), div.max)
 
             const stringVal = value.toString();
             sizeInput.value = stringVal;
             sizeSlider.value = stringVal;
-            label.dispatchEvent(new Event('change'));
+            div.dispatchEvent(new Event('change'));
         }
     });
-    Object.defineProperty(label, 'valueToString', {
+    Object.defineProperty(div, 'valueToString', {
         /** Get value of control set
          * @returns {string} */
         get() {
-            // Return the current max from one of the inputs (assuming they're synced)
             return sizeInput.value.toString() + unitSpan.textContent;
         }
     });
-    Object.defineProperty(label, 'property', {
-        /** Get value of control set
-         * @returns {string} */
+    Object.defineProperty(div, 'cssPair', {
+        /** Get Object containing CSS selector and parameter
+         * @returns {{selector: string, parameter: string}} */
         get() {
-            // Return the current max from one of the inputs (assuming they're synced)
-            return `${cssParameter}: ${sizeInput.value.toString()}${unitSpan.textContent}`;
+            return splitID(div.id);
         }
     });
-    Object.defineProperty(label, 'locked', {
+    Object.defineProperty(div, 'cssSelector', {
+        /** Get CSS Selector value
+         * @returns {string} */
+        get() {
+            return div.cssPair.selector;
+        }
+    });
+    Object.defineProperty(div, 'cssParameter', {
+        /** Get CSS Parameter value
+         * @returns {string} */
+        get() {
+            return div.cssPair.parameter;
+        }
+    });
+    Object.defineProperty(div, 'cssDeclaration', {
+        /** Get CSS Declaration value
+         * @returns {string} */
+        get() {
+            return `${div.cssPair.parameter}: ${div.valueToString}`;
+        }
+    });
+    Object.defineProperty(div, 'locked', {
         /** Get lock state of control set
          * @returns {boolean} */
         get() {
@@ -249,54 +265,61 @@ function generateFontSizeControl(cssSelector, cssParameter, labelText) {
         }
     });
 
-    padlock.addEventListener("click", () => {
-        const currentState = label.locked;
-        label.locked = !currentState;
+    //-------------------------------------EVENT LISTENERS-------------------------------------
 
-        //TODO: disable controls, visually and functionally
+    padlock.addEventListener("click", () => {
+        const currentState = div.locked;
+        const flippedState = !currentState;
+        div.locked = flippedState;
+
+        sizeInput.disabled = flippedState;
+        sizeSlider.disabled = flippedState;
+        label.style.opacity = flippedState ? '0.5' : '1'
+        label.style.pointerEvents = flippedState ? 'none' : 'auto';
     });
 
     sizeInput.addEventListener("input", () => {
-        label.value = sizeInput.value;
+        div.value = sizeInput.value;
     });
 
     sizeSlider.addEventListener("input", () => {
-        label.value = sizeSlider.value;
+        div.value = sizeSlider.value;
     });
 
     unitSpan.addEventListener("click", () => {
         if (unitSpan.textContent === 'em') {
             unitSpan.textContent = 'px';
-            label.setParams(emToPx(label.min), emToPx(label.max), emToPx(label.step))
-            label.value = emToPx(label.value);
+            div.setParams(emToPx(div.min), emToPx(div.max), emToPx(div.step))
+            div.value = emToPx(div.value);
         } else if (unitSpan.textContent === 'px') {
             unitSpan.textContent = 'em';
-            label.setParams(pxToEm(label.min), pxToEm(label.max), pxToEm(label.step))
-            label.value = pxToEm(label.value);
+            div.setParams(pxToEm(div.min), pxToEm(div.max), pxToEm(div.step))
+            div.value = pxToEm(div.value);
         }
     });
 
-    label.setParams(0, 5, 0.1);
-    label.value = 1;
+    //-------------------------------------SET DEFAULTS-------------------------------------
+
+    div.setParams(0, 5, 0.1);
+    div.value = 1;
+
+    //-------------------------------------ASSEMBLE CONTROL-------------------------------------
 
     label.appendChild(sizeInput);
     label.appendChild(unitSpan);
     label.appendChild(breakEl.cloneNode());
     label.appendChild(sizeSlider);
 
+    div.append(padlock);
+    div.append(label);
+
     let result = new DocumentFragment();
 
-    result.append(padlock);
-    result.append(label);
+    result.append(div);
 
     return result;
 }
 
-/*********************************TEST AREA*********************************/
-/***/
-
-
-/***************************************************************************/
 
 /** Await controlsReady to ensure the controls.js module is ready to be used.
  * @type {Promise<void>} */
