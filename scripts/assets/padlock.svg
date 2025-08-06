@@ -2,9 +2,7 @@
     <style>
         :root {
         --padlock-locked-color: red;
-        --padlock-locked-blur-color: var(--padlock-locked-color);
         --padlock-unlocked-color: limegreen;
-        --padlock-unlocked-blur-color: var(--padlock-unlocked-color);
         }
 
         path {
@@ -56,14 +54,6 @@
         [data-locked="false"] feFlood {
         flood-color: var(--padlock-unlocked-blur-color, limegreen);
         }
-
-        [data-blur="true"] g {
-        filter: url(#blur);
-        }
-
-        [data-blur="false"] g {
-        filter: none;
-        }
     </style>
 
     <defs>
@@ -78,7 +68,7 @@
         </filter>
     </defs>
 
-    <g>
+    <g filter="url(#blur)">
         <path class="shackle-locked" d="m11 11.5 0-4a1 1 0 018 0l0 4"/>
         <path class="shackle-unlocked" d="m11 11.5 0-4a1 1 0 00-8 0"/>
         <path class="body" d="m19 24.5h-8a-3-3 0 01-3-3v-7a3-3 0 013-3h8a3 3 0 013 3v7a-3 3 0 01-3 3"/>

@@ -1,27 +1,36 @@
 /**
- * Used to set whether debugLog() prints to console.log() or not.
+ * @module debugLog
+ * @description
+ * Provides a simple debug logging mechanism controllable via `setDebug`.
+ * When enabled, `debugLog` prints messages to the console.
  *
+ * Includes:
+ * - `setDebug`: Enable or disable debug logging.
+ * - `debugLog`: Conditionally prints messages to the console.
+ */
+
+/**
+ * Whether debugLog should print messages.
  * @type {boolean}
  */
 let DEBUG = true;
 
 /**
- * Sets the DEBUG staus for debugLog().
+ * Enable or disable debug logging.
  *
- * @param {boolean} debug - Print debugLog() messages?
+ * @param {boolean} [debug=true] - If true, debugLog will print messages; otherwise, it will not.
  */
-
 function setDebug(debug = true) {
     DEBUG = debug;
 }
 
 /**
- * Sends 'args' to console.log() for debugging.
+ * Prints messages to the console if debugging is enabled.
  *
- * @param args - What to print to the console.
+ * @param {...any} args - The items to log.
  */
 function debugLog(...args) {
     if (DEBUG) console.log(...args);
 }
 
-export {setDebug, debugLog}
+export {setDebug, debugLog};
