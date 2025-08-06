@@ -20,10 +20,18 @@ export const controlsReady = Promise.all([
 });
 
 /**
+ * Generator function type for UI controls.
+ *
+ * @callback ControlGenerator
+ * @param {...any} params - Parameters specific to each control generator.
+ * @returns {DocumentFragment} The generated control DOM fragment.
+ */
+
+/**
  * Registry mapping short control type names (e.g. "FontSize")
  * to their corresponding generator functions.
  *
- * @type {Object<string, Function>}
+ * @type {Object<string, ControlGenerator>}
  * @private
  */
 const generatorRegistry = Object.fromEntries(
