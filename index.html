@@ -6,13 +6,31 @@
 
     <!-- html2pdf.js import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- Google Fonts (example set) -->
 
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&family=Open+Sans&family=Merriweather&family=Inconsolata&display=swap"
-          rel="stylesheet">
+    <script type="module">
+        import {setDebug} from "./scripts/debugLog.js";
 
-    <!-- Choices.js CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
+        setDebug(false);
+
+        import {controlsReady, generateControl, ControlTypes} from "./scripts/controls.js";
+
+        await controlsReady;
+
+        const pageSettings = document.getElementById("pageSettings");
+        pageSettings.append(
+            generateControl(ControlTypes.FontSize, "body", "font-size", "Font Size"),
+            generateControl(ControlTypes.FontFamily, "body", "font-family", "Font"),
+            generateControl(ControlTypes.Color, "body", "color", "Font Color"),
+        );
+
+        const headerSettings = document.getElementById("headerSettings");
+        headerSettings.append(
+            generateControl(ControlTypes.FontSize, "h1", "font-size", "Font Size"),
+            generateControl(ControlTypes.FontFamily, "h1", "font-family", "Font"),
+            generateControl(ControlTypes.Color, "h1", "color", "Font Color"),
+        );
+    </script>
+
 
     <style>
         html, body {
@@ -97,54 +115,11 @@
 <div id="container">
     <div id="styleControls">
         <div id="controlContainer">
-            <div class="styleBlock">
+            <div class="styleBlock" id="pageSettings">
                 <h3>Page settings</h3>
-                <label for="fontSize">Font Size:
-                    <input type="number" id="fontSizeInput" data-control="fontSizeInput">
-                    <span id="fontSizeUnit">×</span><br/>
-                    <input type="range" id="fontSize" data-control="fontSize"/></label>
-
-                <br/><br/>
-                <label for="pageFamily">Font Family:
-                    <select id="pageFamily" data-control="pageFamily">
-                        <option value="sans-serif">Sans</option>
-                        <option value="serif">Serif</option>
-                        <option value="'Times New Roman', serif">Times New Roman</option>
-                        <option value="monospace">Monospace</option>
-                        <option value="'Roboto', sans-serif">Roboto</option>
-                        <option value="'Open Sans', sans-serif">Open Sans</option>
-                        <option value="'Merriweather', serif">Merriweather</option>
-                        <option value="'Inconsolata', monospace">Inconsolata</option>
-                        <!-- Add more fonts here -->
-                    </select></label>
-                <br/>
-                <label for="pageColor">Text Color:
-                    <input type="color" id="pageColor" data-control="pageColor"/></label>
             </div>
-            <div class="styleBlock">
+            <div class="styleBlock" id="headerSettings">
                 <h3>Header settings</h3>
-                <label for="headerSize">Font Size:
-                    <input type="number" id="headerSizeInput" data-control="headerSizeInput">
-                    <span id="headerSizeUnit">×</span><br/>
-                    <input type="range" id="headerSize" data-control="headerSize"/></label>
-
-                <br/><br/>
-                <label for="headerFamily">Font Family:
-                    <select id="headerFamily" data-control="headerFamily">
-                        <option value="sans-serif">Sans</option>
-                        <option value="serif">Serif</option>
-                        <option value="'Times New Roman', serif">Times New Roman</option>
-                        <option value="monospace">Monospace</option>
-                        <option value="'Roboto', sans-serif">Roboto</option>
-                        <option value="'Open Sans', sans-serif">Open Sans</option>
-                        <option value="'Merriweather', serif">Merriweather</option>
-                        <option value="'Inconsolata', monospace">Inconsolata</option>
-                        <!-- Add more fonts here -->
-                    </select>
-                </label>
-                <br/>
-                <label for="headerColor">Text Color:
-                    <input type="color" id="headerColor" data-control="headerColor"/></label>
             </div>
         </div>
 
@@ -164,6 +139,7 @@
 
 <script type="module">
     import {setDebug, debugLog} from "./scripts/debugLog.js";
+    import {generateID, splitID} from "./scripts/controlUtils.js";
 
     setDebug(true);
 
@@ -232,144 +208,8 @@
         }
     }
 
-    async function loadPadlockSVG() {
-        try {
-            const response = await fetch('assets/padlock.svg');
-            const svgText = await response.text();
-
-            const parser = new DOMParser();
-            const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
-            const svgElement = svgDoc.querySelector("svg");
-
-            if (!svgElement) {
-                throw new Error("SVG root <svg> not found");
-            }
-
-            padlockTemplate = svgElement;
-            debugLog("Padlock SVG loaded:", padlockTemplate);
-        } catch (error) {
-            console.error("Failed to load padlock.svg:", error);
-        }
-    }
-
-    // Planned to be used to populate the page with padlock controls
-    function createPadlockInstance() {
-        if (!padlockTemplate) {
-            console.warn("Padlock template not loaded yet.");
-            return null;
-        }
-        const padlock = padlockTemplate.cloneNode(true);
-
-        // Attach the .lock() method to this instance
-        padlock.lock = function (lockState) {
-            if (lockState === 'true' || lockState === 'false') {
-                this.setAttribute("data-locked", lockState);
-            } else {
-                // Do nothing for invalid input
-                console.warn("padlock.lock() expects 'true' or 'false' as string");
-            }
-        };
-
-        padlock.lock("false");
-
-        // Add toggle behavior on click
-        padlock.addEventListener('click', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            const currentState = padlock.getAttribute('data-locked');
-            const newState = (currentState === 'true') ? 'false' : 'true';
-
-            if (typeof padlock.lock === 'function') {
-                padlock.lock(newState);
-            }
-
-            const label = padlock.nextElementSibling;
-            if (!label || label.tagName.toLowerCase() !== 'label') return;
-
-            // Disable pointer events on the label and all its child elements
-            label.style.pointerEvents = newState === 'true' ? 'none' : '';
-            label.style.opacity = newState === 'true' ? '0.6' : '';
-
-            // Set aria-disabled for accessibility on the label and its descendants
-            label.setAttribute('aria-disabled', newState === 'true' ? 'true' : 'false');
-            label.querySelectorAll('*').forEach(el => {
-                el.setAttribute('aria-disabled', newState === 'true' ? 'true' : 'false');
-            });
-        });
-
-
-        return padlock;
-    }
-
-    function insertPadlocks() {
-        if (!padlockTemplate) {
-            console.warn("Padlock SVG not loaded yet.");
-            return;
-        }
-
-        const labels = document.querySelectorAll(".styleBlock label");
-
-        labels.forEach(label => {
-            // Prevent double insertion by checking if previous sibling is a padlock
-            if (label.previousElementSibling?.classList.contains("padlock")) return;
-
-            const padlock = createPadlockInstance();
-            if (!padlock) return;
-
-            padlock.classList.add("padlock");
-            padlock.style.width = "1em";
-            padlock.style.height = "1em";
-            padlock.style.verticalAlign = "middle";
-            padlock.style.marginRight = "0.3em";
-            padlock.style.cursor = "pointer";
-            padlock.style.userSelect = "none";
-
-            // Prevent padlock from hijacking focus or click behavior
-            ['mousedown', 'click', 'dblclick'].forEach(evt =>
-                padlock.addEventListener(evt, e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                })
-            );
-
-            // Insert the padlock directly before the label
-            label.parentNode.insertBefore(padlock, label);
-        });
-
-        debugLog("Padlocks inserted before all labels.");
-    }
-
-    function applyLockToPadlock(controlEl, lockState) {
-        if (!controlEl || (lockState !== 'true' && lockState !== 'false')) return;
-
-        const label = controlEl.closest('label');
-        if (!label) {
-            console.warn('Control element has no enclosing label:', controlEl);
-            return;
-        }
-
-        const padlock = label.previousElementSibling;
-        if (!padlock || !padlock.classList.contains("padlock")) {
-            console.warn('Padlock not found before label for control:', controlEl);
-            return;
-        }
-
-        if (typeof padlock.lock === 'function') {
-            padlock.lock(lockState);
-            const isLocked = lockState === 'true';
-
-            // Disable or enable all interactive children in the label
-            const elementsToToggle = label.querySelectorAll('input, select, textarea, button');
-            elementsToToggle.forEach(el => el.disabled = isLocked);
-        } else {
-            console.warn('Padlock does not have a .lock() method:', padlock);
-        }
-    }
-
     let styleTemplates; // Object to hold style templates loaded from the style-templates.json file
     let controls; // Object to hold in-page control references
-    let padlockTemplate; // Template variable of padlock.svg
 
     function getControl(id) {
         const el = document.getElementById(id);
@@ -423,7 +263,7 @@
     function populateControls() {
         controls = Object.freeze(
             Object.fromEntries(
-                Array.from(document.querySelectorAll("[data-control]")).map(el => [el.dataset.control, el])
+                Array.from(document.querySelectorAll("[data-control]")).map(el => [el.id, el])
             )
         );
         debugLog("Controls loaded:", controls);
@@ -437,14 +277,8 @@
             // Load templates from style-templates.json
             await parseJsonTemplate();
 
-            // Load padlock.svg into global variable
-            await loadPadlockSVG();
-
             // Populate the controls object with in-page controls for use in later functions
             populateControls();
-
-            // Insert padlocks to use to lock controls
-            insertPadlocks();
 
             // Populate the template selector dropdown **before** setting up style controls
             populateTemplateSelector();
@@ -483,20 +317,6 @@
             setupStyleControls(); // Fonts already there
         }
     }
-
-    // function findStyleSheetWithMarker(doc) {
-    //     for (let i = 0; i < doc.styleSheets.length; i++) {
-    //         const sheet = doc.styleSheets[i];
-    //         try {
-    //             if (sheet.ownerNode?.getAttribute("data-style-marker") === "dynamic") {
-    //                 return sheet;
-    //             }
-    //         } catch (e) {
-    //             console.warn("Could not access stylesheet:", sheet.href, e);
-    //         }
-    //     }
-    //     return null;
-    // }
 
     function populateTemplateSelector() {
         // Clear existing options (if any)
@@ -537,38 +357,44 @@
     }
 
     function updateControls() {
+        const current = styleTemplates.getCurrentTemplate();
+        if (!current) return;
 
-        // Page font size
-        controls.fontSize.min = styleTemplates.page.size.min;
-        controls.fontSize.max = styleTemplates.page.size.max;
-        controls.fontSize.step = styleTemplates.page.size.step;
-        controls.fontSize.value = styleTemplates.page.size.default;
+        for (let control of Object.values(controls)) {
+            if (control.reset) control.reset();
+        }
 
-        applyLockToPadlock(controls.fontSize, 'true');
+        Object.assign(controls[generateID('body', 'font-size')], {
+            locked: current.page.size.locked,
+            value: current.page.size.default,
+            min: current.page.size.min,
+            max: current.page.size.max,
+            step: current.page.size.step
+        });
+        Object.assign(controls[generateID('body', 'font-family')], {
+            locked: current.page.family.locked,
+            value: current.page.family.default
+        });
+        Object.assign(controls[generateID("body", 'color')], {
+            locked: current.page.color.locked,
+            value: current.page.color.default
+        });
 
-        controls.fontSizeInput.min = styleTemplates.page.size.min;
-        controls.fontSizeInput.max = styleTemplates.page.size.max;
-        controls.fontSizeInput.step = styleTemplates.page.size.step;
-        controls.fontSizeInput.value = styleTemplates.page.size.default;
-
-        // Header font size
-        controls.headerSize.min = styleTemplates.header.size.min;
-        controls.headerSize.max = styleTemplates.header.size.max;
-        controls.headerSize.step = styleTemplates.header.size.step;
-        controls.headerSize.value = styleTemplates.header.size.default;
-
-        controls.headerSizeInput.min = styleTemplates.header.size.min;
-        controls.headerSizeInput.max = styleTemplates.header.size.max;
-        controls.headerSizeInput.step = styleTemplates.header.size.step;
-        controls.headerSizeInput.value = styleTemplates.header.size.default;
-
-        // Colors
-        controls.pageColor.value = styleTemplates.page.color.default;
-        controls.headerColor.value = styleTemplates.header.color.default;
-
-        // Font families via Choices.js
-        pageFamilyChoices?.setChoiceByValue(styleTemplates.page.family.default);
-        headerFamilyChoices?.setChoiceByValue(styleTemplates.header.family.default);
+        Object.assign(controls[generateID('h1', 'font-size')], {
+            locked: current.header.size.locked,
+            value: current.header.size.default,
+            min: current.header.size.min,
+            max: current.header.size.max,
+            step: current.header.size.step
+        });
+        Object.assign(controls[generateID('h1', 'font-family')], {
+            locked: current.header.family.locked,
+            value: current.header.family.default
+        });
+        Object.assign(controls[generateID("h1", 'color')], {
+            locked: current.header.color.locked,
+            value: current.header.color.default
+        });
     }
 
     function setupStyleControls() {
@@ -576,18 +402,34 @@
 
         const applyStyles = () => {
             const style = doc.getElementById("dynamic-style");
-            style.textContent = `
-        body {
-          font-size: ${controls.fontSize.value}em;
-          font-family: ${controls.pageFamily.value};
-          color: ${controls.pageColor.value};
-        }
 
-        h1 {
-          font-size: ${controls.headerSize.value}em;
-          font-family: ${controls.headerFamily.value};
-          color: ${controls.headerColor.value};
-        }`;
+            // Get all controls from the main document
+            const controlElements = [...document.querySelectorAll('[data-control]')];
+
+            // Filter only those with a .reset() method
+            const validControls = controlElements.filter(el => typeof el.reset === 'function');
+
+            // Group declarations by CSS selector
+            const grouped = {};
+
+            for (const el of validControls) {
+                const selector = el.cssSelector;
+                const declaration = el.cssDeclaration;
+
+                if (!grouped[selector]) {
+                    grouped[selector] = [];
+                }
+
+                grouped[selector].push(declaration);
+            }
+
+            // Construct final stylesheet text
+            const stylesheet = Object.entries(grouped)
+                .map(([selector, declarations]) => `${selector} {\n  ${declarations.join(';\n  ')};\n}`)
+                .join('\n\n');
+
+            // Inject into the iframe or other `doc`
+            style.textContent = stylesheet;
         };
 
         const updateStyle = () => {
@@ -601,37 +443,9 @@
 
         getControl("resetStyles").addEventListener("click", resetStyleControls);
 
-        controls.fontSize.addEventListener("input", () => {
-            controls.fontSizeInput.value = controls.fontSize.value;
-            updateStyle();
-        });
-        controls.fontSizeInput.addEventListener("change", () => {
-            if (typeof styleTemplates.page.clamp === "function") {
-                controls.fontSizeInput.value = styleTemplates.page.clamp(parseFloat(controls.fontSizeInput.value));
-            }
-            controls.fontSize.value = controls.fontSizeInput.value;
-            updateStyle();
-        });
-
-        controls.pageColor.addEventListener("input", updateStyle);
-        controls.pageFamily.addEventListener("change", updateStyle);
-
-        controls.headerSize.addEventListener("input", () => {
-            controls.headerSizeInput.value = controls.headerSize.value;
-            updateStyle();
-        });
-        controls.headerSizeInput.addEventListener("change", () => {
-            if (typeof styleTemplates.header.clamp === "function") {
-                controls.headerSizeInput.value = styleTemplates.header.clamp(parseFloat(controls.headerSizeInput.value));
-            }
-            controls.headerSize.value = controls.headerSizeInput.value;
-            updateStyle();
-        });
-
-        controls.headerColor.addEventListener("input", updateStyle);
-        controls.headerFamily.addEventListener("change", updateStyle);
-
-        controls.templateSelector.addEventListener("change", updateStyle)
+        for (const control of Object.values(controls)) {
+            control.addEventListener("change", updateStyle);
+        }
 
         updateControls(); // Verify controls are set to current template
         updateStyle(); // Verify applied style is the current template
@@ -687,9 +501,6 @@
         };
     }
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<script src="scripts/applyChoicesClass.js"></script>
 
 </body>
 </html>

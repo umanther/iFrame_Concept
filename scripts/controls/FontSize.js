@@ -57,7 +57,7 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
 
     const div = document.createElement("div");
     assignProps(div, {
-        id: setID, 'data-type': 'FontSize',
+        id: setID, 'data-control': 'FontSize',
     }, {
         display: "inline-block", margin: '.25em',
     });
@@ -234,8 +234,25 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
          * @param {boolean} value */
         set(value) {
             padlock.setAttribute('data-locked', value.toString());
+
+            sizeInput.disabled = div.locked;
+            sizeSlider.disabled = div.locked;
+            label.style.opacity = div.locked ? '0.5' : '1'
+            label.style.pointerEvents = div.locked ? 'none' : 'auto';
         }
     });
+
+    div.reset = () => {
+        // Ensure unit is 'em' when resetting
+        unitSpan.textContent = 'em'
+        div.setParams(minimumMin, maximumMax, 0.1);
+
+        // Refresh the options
+        div.refreshOptions();
+
+        // Reset the value to default
+        div.value = 1;
+    };
 
     /**
      * Adds a single <option> element to the datalist.
@@ -301,6 +318,10 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
         // Normalize minEm and maxEm so minEm <= maxEm
         if (minEm > maxEm) [minEm, maxEm] = [maxEm, minEm];
 
+        // Round bounds
+        minEm = Math.floor(minEm);
+        maxEm = Math.ceil(maxEm);
+
         // Number of steps (inclusive)
         const count = Math.floor((maxEm - minEm) / step) + 1;
 
@@ -316,14 +337,7 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
     //-------------------------------------EVENT LISTENERS-------------------------------------
 
     padlock.addEventListener("click", () => {
-        const currentState = div.locked;
-        const flippedState = !currentState;
-        div.locked = flippedState;
-
-        sizeInput.disabled = flippedState;
-        sizeSlider.disabled = flippedState;
-        label.style.opacity = flippedState ? '0.5' : '1'
-        label.style.pointerEvents = flippedState ? 'none' : 'auto';
+        div.locked = !div.locked;
     });
 
     sizeInput.addEventListener("input", () => {

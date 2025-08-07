@@ -1,6 +1,6 @@
 import {padlockTemplate} from "../padlock.js";
 import {Choices} from "../choices.js";
-import {generateID, splitID, assignProps, padlockStyles} from "../controlUtils.js";
+import {assignProps, generateID, padlockStyles, splitID} from "../controlUtils.js";
 
 
 const defaultFonts = Object.fromEntries(
@@ -32,7 +32,7 @@ export function generateFontFamilyControl(cssSelector, cssParameter, labelText) 
     const div = document.createElement("div");
     assignProps(div, {
         id: setID,
-        'data-type': 'FontFamily'
+        'data-control': 'FontFamily'
     }, {
         display: 'flex',
         margin: '.25em',
@@ -106,14 +106,14 @@ export function generateFontFamilyControl(cssSelector, cssParameter, labelText) 
             return fontSel.value;
         },
         set(newVal) {
-            fontSel.value = newVal;
+            fontSelChoices.setChoiceByValue(newVal);
             fontSel.dispatchEvent(new Event("change", {bubbles: true}));
         }
     });
 
     Object.defineProperty(div, 'asString', {
         get() {
-            return `'${fontSel.value}'`;
+            return `${fontSel.value}`;
         }
     });
 
@@ -159,19 +159,21 @@ export function generateFontFamilyControl(cssSelector, cssParameter, labelText) 
          * @param {boolean} value */
         set(value) {
             padlock.setAttribute('data-locked', value.toString());
+
+            fontSel.disabled = div.locked;
+            label.style.opacity = div.locked ? '0.5' : '1';
+            label.style.pointerEvents = div.locked ? 'none' : 'auto';
         }
     });
+
+    div.reset = () => {
+        div.value = 'sans-serif';
+    };
 
     //-------------------------------------EVENT LISTENERS-------------------------------------
 
     padlock.addEventListener("click", () => {
-        const currentState = div.locked;
-        const flippedState = !currentState;
-        div.locked = flippedState;
-
-        fontSel.disabled = flippedState;
-        label.style.opacity = flippedState ? '0.5' : '1'
-        label.style.pointerEvents = flippedState ? 'none' : 'auto';
+        div.locked = !div.locked;
     });
 
     //-------------------------------------SET DEFAULTS-------------------------------------

@@ -15,7 +15,7 @@ export function generateColorControl(cssSelector, cssParameter, labelText) {
     const div = document.createElement("div");
     assignProps(div, {
         id: setID,
-        'data-type': 'Color'
+        'data-control': 'Color'
     }, {
         display: 'inline-block',
         margin: '.25em'
@@ -94,19 +94,21 @@ export function generateColorControl(cssSelector, cssParameter, labelText) {
         },
         set(value) {
             padlock.setAttribute('data-locked', value.toString());
+
+            colorSel.disabled = div.locked;
+            label.style.opacity = div.locked ? '0.5' : '1';
+            label.style.pointerEvents = div.locked ? 'none' : 'auto';
         }
     });
+
+    div.reset = () => {
+        div.value = '#000000';
+    };
 
     //-------------------------------------EVENT LISTENERS-------------------------------------
 
     padlock.addEventListener("click", () => {
-        const currentState = div.locked;
-        const flippedState = !currentState;
-        div.locked = flippedState;
-
-        colorSel.disabled = flippedState;
-        label.style.opacity = flippedState ? '0.5' : '1';
-        label.style.pointerEvents = flippedState ? 'none' : 'auto';
+        div.locked = !div.locked;
     });
 
     colorSel.addEventListener("input", () => {

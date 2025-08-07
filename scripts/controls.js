@@ -4,7 +4,7 @@ import {choicesLoaded} from './choices.js';
 
 import * as generators from "./controls/index.js";
 
-setDebug(true);
+setDebug(false);
 
 /**
  * A Promise that resolves when all necessary control dependencies have loaded.

@@ -65,6 +65,10 @@ function splitID(ID) {
 function assignProps(element, props = {}, styles = {}) {
     // Assign properties to the element directly
     for (const [key, value] of Object.entries(props)) {
+        if (key.startsWith("data-")) {
+            element.setAttribute(key, value);
+            continue;
+        }
         try {
             element[key] = value;
         } catch {
