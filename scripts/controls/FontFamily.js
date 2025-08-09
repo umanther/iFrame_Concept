@@ -25,6 +25,8 @@ export function generateFontFamilyControl(cssSelector, cssParameter, labelText) 
 
     //-------------------------------------UTILITY FUNCTION-------------------------------------
 
+    let _defaultFont = 'sans-serif';
+
     let setID = generateID(cssSelector, cssParameter);
 
     //-------------------------------------DEFINE COMPONENTS-------------------------------------
@@ -167,7 +169,50 @@ export function generateFontFamilyControl(cssSelector, cssParameter, labelText) 
     });
 
     div.reset = () => {
-        div.value = 'sans-serif';
+        div.value = _defaultFont;
+    };
+
+    /**
+     * Save the default font configuration for this Font type control.
+     *
+     * This function:
+     *  - Requires a valid font-family string or comma-separated list of font-family names.
+     *  - Validates the general structure of the font-family string (letters, digits, spaces,
+     *    commas, dashes, optional paired quotes).
+     *  - Throws an error if the font-family string is missing or malformed.
+     *  - Stores the font-family string as the default.
+     *  - Optionally calls div.reset() if withReset is true.
+     *
+     * @function setDefaults
+     * @param {Object} params - The configuration object.
+     * @param {string} params.value - The font-family string.
+     * @param {boolean} [withReset=false] - If true, immediately applies defaults by calling div.reset().
+     * @throws {Error} If `value` is missing or not a valid font-family string.
+     * @returns {void} This function does not return anything.
+     */
+    div.setDefaults = ({value}, withReset = false) => {
+        const mkErr = (msg) => {
+            throw new Error(`[Font Control][setDefaults] ${msg}`);
+        };
+
+        const isValidFontFamily = (val) => {
+            if (typeof val !== "string" || !val.trim()) return false;
+
+            // Regex explanation:
+            // - Matches one or more font names separated by commas
+            // - Each font name optionally wrapped in single or double quotes (paired)
+            // - Font names contain letters, digits, spaces, dash, underscore
+            const fontFamilyPattern = /^(\s*(['"]?)[\w\s\-]+?\2\s*,)*\s*(['"]?)[\w\s\-]+?\3\s*$/;
+            return fontFamilyPattern.test(val);
+        };
+
+        if (!isValidFontFamily(value)) {
+            mkErr(`Invalid font-family string: "${value}"`);
+        }
+
+        _defaultFont = value;
+
+        if (withReset) div.reset();
     };
 
     //-------------------------------------EVENT LISTENERS-------------------------------------

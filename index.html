@@ -219,43 +219,23 @@
         return el;
     }
 
-    async function parseJsonTemplate() {
-        function addClampIfNeeded(section) {
-            if (
-                section &&
-                section.size &&
-                typeof section.size.min === "number" &&
-                typeof section.size.max === "number"
-            ) {
-                section.clamp = function (value) {
-                    return Math.min(Math.max(value, this.size.min), this.size.max);
-                };
-            }
-        }
-
+    async function parseJsonTemplates() {
         try {
             const jsonData = await loadJsonFile('style-templates.json');
 
-            // Create a new StyleTemplates object
             let styleTemplatesRaw = new StyleTemplates();
             styleTemplates = createStyleTemplatesProxy(styleTemplatesRaw);
 
-            // Iterate over each template
             jsonData.templates.forEach(template => {
-                const processed = {name: template.name};
-
-                Object.entries(template).forEach(([sectionName, sectionData]) => {
-                    if (sectionName === "name") return;
-
-                    const section = structuredClone(sectionData);
-                    addClampIfNeeded(section);
-                    processed[sectionName] = section;
-                });
+                // Clone template and keep sections array intact
+                const processed = {
+                    name: template.name,
+                    sections: structuredClone(template.sections)
+                };
 
                 styleTemplates.templates.push(processed);
             });
-        } catch
-            (error) {
+        } catch (error) {
             console.error("Failed to parse style templates:", error);
         }
     }
@@ -275,7 +255,7 @@
         frame.src = "Large HTML page with images.html";
         frame.onload = async () => {
             // Load templates from style-templates.json
-            await parseJsonTemplate();
+            await parseJsonTemplates();
 
             // Populate the controls object with in-page controls for use in later functions
             populateControls();
@@ -360,41 +340,20 @@
         const current = styleTemplates.getCurrentTemplate();
         if (!current) return;
 
-        for (let control of Object.values(controls)) {
-            if (control.reset) control.reset();
+        for (let section of current.sections) {
+            for (let cssSelector in section) {
+                if (cssSelector === 'name') continue;
+                for (let cssProperty in section[cssSelector]) {
+                    let attributes = section[cssSelector][cssProperty]
+                    let target = controls[generateID(cssSelector, cssProperty)];
+                    let attribsToSet = {...attributes};
+                    delete attribsToSet['type'];
+                    delete attribsToSet['locked'];
+                    target.locked = attributes.locked;
+                    target.setDefaults(attribsToSet, true);
+                }
+            }
         }
-
-        Object.assign(controls[generateID('body', 'font-size')], {
-            locked: current.page.size.locked,
-            value: current.page.size.default,
-            min: current.page.size.min,
-            max: current.page.size.max,
-            step: current.page.size.step
-        });
-        Object.assign(controls[generateID('body', 'font-family')], {
-            locked: current.page.family.locked,
-            value: current.page.family.default
-        });
-        Object.assign(controls[generateID("body", 'color')], {
-            locked: current.page.color.locked,
-            value: current.page.color.default
-        });
-
-        Object.assign(controls[generateID('h1', 'font-size')], {
-            locked: current.header.size.locked,
-            value: current.header.size.default,
-            min: current.header.size.min,
-            max: current.header.size.max,
-            step: current.header.size.step
-        });
-        Object.assign(controls[generateID('h1', 'font-family')], {
-            locked: current.header.family.locked,
-            value: current.header.family.default
-        });
-        Object.assign(controls[generateID("h1", 'color')], {
-            locked: current.header.color.locked,
-            value: current.header.color.default
-        });
     }
 
     function setupStyleControls() {

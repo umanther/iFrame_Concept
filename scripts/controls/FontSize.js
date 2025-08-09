@@ -1,6 +1,6 @@
 import {padlockTemplate} from "../padlock.js";
-import {generateID, splitID, assignProps, padlockStyles} from "../controlUtils.js";
-import {decimalPlaces, roundTo} from "../utilities.js";
+import {assignProps, generateID, padlockStyles, splitID} from "../controlUtils.js";
+import {roundTo} from "../utilities.js";
 
 /** Generates a size control set.
  *
@@ -16,27 +16,48 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
 
     //-------------------------------------UTILITY FUNCTION-------------------------------------
 
-    const defaultPxSize = 16;
-    // These are in em.  Min and max px would be appropriately converted
-    const minimumMin = 0;
-    const maximumMax = 10;
-
-    /** Converts px to em using default font size
+    const defaultUnitSize = 16;
+    const defaultUnitType = 'px';  // Update typedef below if changing
+    /** The allowed unit types for size values.
+     * Currently, supports:
+     * - 'px' (pixels)
+     * - 'em' (ems)
      *
-     * @param pxSize
+     * @typedef {'px'|'em'} allowedUnits
+     */
+
+
+        // These are in pt.  Min and max pt would be appropriately converted
+    const minimumMin = roundTo(0 * defaultUnitSize, 0);
+    const maximumMax = roundTo(7 * defaultUnitSize, 0);
+
+    // Back-end storage
+    let _min = 0,
+        _max = 0,
+        _value = 0
+
+    // Defaults to reset to
+    let _defaultMin = 0,
+        _defaultMax = 0,
+        _defaultValue = 0,
+        _defaultUnits = defaultUnitType
+
+    /** Converts to em using default font size
+     *
+     * @param ptSize
      * @returns {number}
      */
-    function pxToEm(pxSize) {
-        return roundTo(pxSize / defaultPxSize, 1);
+    function ptToEm(ptSize) {
+        return ptSize / defaultUnitSize;
     }
 
-    /** Converts em to px using default font size
+    /** Converts em to pt using default font size
      *
      * @param emSize
      * @returns {number}
      */
-    function emToPx(emSize) {
-        return roundTo(emSize * defaultPxSize, 0);
+    function emToPt(emSize) {
+        return emSize * defaultUnitSize;
     }
 
     /**
@@ -51,7 +72,32 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
         return option;
     }
 
-    let setID = generateID(cssSelector, cssParameter);
+    const setID = generateID(cssSelector, cssParameter);
+
+    const updateControls = (withEvent = false) => {
+        const normValue = div.units === defaultUnitType ? roundTo(_value, 0) : roundTo(ptToEm(_value), 1);
+        const normMin = div.units === defaultUnitType ? roundTo(_min, 0) : roundTo(ptToEm(_min), 1);
+        const normMax = div.units === defaultUnitType ? roundTo(_max, 0) : roundTo(ptToEm(_max), 1);
+        const normStep = div.units === defaultUnitType ? 1 : 0.1;
+
+        Object.assign(sizeInput, {
+            min: normMin.toString(),
+            max: normMax.toString(),
+            step: normStep.toString(),
+            value: normValue.toString()
+        });
+
+        Object.assign(sizeSlider, {
+            min: normMin.toString(),
+            max: normMax.toString(),
+            step: normStep.toString(),
+            value: normValue.toString()
+        });
+
+        div.refreshOptions();
+
+        if (withEvent) div.dispatchEvent(new Event('change'));
+    };
 
     //-------------------------------------DEFINE COMPONENTS-------------------------------------
 
@@ -78,17 +124,16 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
     assignProps(sizeInput, {
         id: `${setID}-input`, type: "number"
     }, {
-        width: "2.5em"
+        width: "3em"
     });
 
     const unitSpan = document.createElement('span');
     assignProps(unitSpan, {
 
-        id: `${setID}-span`, textContent: "em"
+        id: `${setID}-span`, textContent: "pt"
     }, {
         display: "inline-block", padding: '.25em', width: '1em', userSelect: 'none'
     });
-
 
     const dataList = document.createElement("datalist");
     assignProps(dataList, {
@@ -106,97 +151,74 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
 
     Object.defineProperty(div, 'min', {
         get() {
-            return Number(sizeInput.min);
-        }, set(value) {
-            // Convert minimumMin to current unit
-            let unitMin = unitSpan.textContent === 'px' ? emToPx(minimumMin) : minimumMin;
+            return div.units === defaultUnitType ? roundTo(_min, 0) : roundTo(ptToEm(_min), 1);
+        },
+        set(val) {
+            _min = div.units === defaultUnitType ? roundTo(val, 0) : emToPt(roundTo(val, 1));
 
-            let clamped = Math.max(unitMin, Number(value));
+            _min = Math.max(_min, minimumMin);
 
-            // Clamp to max as well
-            if (clamped > div.max) {
-                clamped = div.max;
-            }
-
-            sizeInput.min = clamped.toString();
-            sizeSlider.min = clamped.toString();
-
-            div.refreshOptions();
+            _value = Math.max(_min, _value);
+            updateControls();
         }
     });
+
     Object.defineProperty(div, 'max', {
         get() {
-            return Number(sizeInput.max);
-        }, set(value) {
-            // Convert maximumMax to current unit
-            let unitMax = unitSpan.textContent === 'px' ? emToPx(maximumMax) : maximumMax;
+            return div.units === defaultUnitType ? roundTo(_max, 0) : roundTo(ptToEm(_max), 1);
+        },
+        set(val) {
+            _max = div.units === defaultUnitType ? roundTo(val, 0) : emToPt(roundTo(val, 1));
 
-            let clamped = Math.min(unitMax, Number(value));
+            _max = Math.min(_max, maximumMax);
 
-            if (clamped < div.min) {
-                clamped = div.min;
-            }
-
-            sizeInput.max = clamped.toString();
-            sizeSlider.max = clamped.toString();
-
-            div.refreshOptions();
+            _value = Math.min(_max, _value);
+            updateControls();
         }
     });
-    Object.defineProperty(div, 'step', {
-        /** Get step value of control set
-         * @returns {number} */
-        get() {
-            return Number(sizeInput.step);
-        }, /** Set step value for control set
-         * @param {number} value */
-        set(value) {
-            const stringVal = value.toString();
-            sizeInput.step = stringVal;
-            sizeSlider.step = stringVal;
-        }
-    });
-    /** Sets all control parameters
-     * @param {number} max - Maximum font size
-     * @param {number} min - Minimum font size
-     * @param {number} step - Font size step value */
-    div.setParams = (min, max, step) => {
-        // Convert minimumMin and maximumMax to current unit
-        const unitMin = unitSpan.textContent === 'px' ? emToPx(minimumMin) : minimumMin;
-        const unitMax = unitSpan.textContent === 'px' ? emToPx(maximumMax) : maximumMax;
-
-        min = Math.max(unitMin, min);
-        max = Math.min(unitMax, max);
-        if (min > max) max = min;
-
-        div.min = min;
-        div.max = max;
-        div.step = step;
-    };
 
     Object.defineProperty(div, 'value', {
-        /** Get value of control set
-         * @returns {number} */
         get() {
-            return Number(sizeInput.value);
-        }, /** Set value for control set
-         * @param {number} value */
-        set(value) {
-            value = Math.min(Math.max(value, div.min), div.max)
+            return div.units === defaultUnitType ? roundTo(_value, 0) : roundTo(ptToEm(_value), 1);
+        },
+        set(val) {
+            // Parse input to number explicitly
+            const numVal = typeof val === 'number' ? val : parseFloat(val);
+            if (!Number.isFinite(numVal)) {
+                console.warn(`[FontSizeControl] Invalid value set: ${val}. Ignoring.`);
+                return; // Ignore invalid input without throwing error
+            }
 
-            const stringVal = value.toString();
-            sizeInput.value = stringVal;
-            sizeSlider.value = stringVal;
-            div.dispatchEvent(new Event('change', {bubbles: true}));
+            let normValue = div.units === defaultUnitType ? roundTo(numVal, 0) : emToPt(roundTo(numVal, 1));
+            normValue = Math.max(Math.min(normValue, _max), _min);
+
+            _value = normValue;
+            updateControls(true);
         }
     });
+
+    Object.defineProperty(div, 'units', {
+        get() {
+            return unitSpan.textContent;
+        },
+        set(newUnit) {
+            if (newUnit === 'em' || newUnit === defaultUnitType) {
+                unitSpan.textContent = newUnit;
+                updateControls(true);
+            } else {
+                console.warn(`Unsupported unit: ${newUnit}`);
+            }
+        }
+    });
+
     Object.defineProperty(div, 'asString', {
         /** Get value of control set
          * @returns {string} */
         get() {
-            return sizeInput.value.toString() + unitSpan.textContent;
+            return `${div.value}${div.units}`;
         }
     });
+
     Object.defineProperty(div, 'cssPair', {
         /** Get Object containing CSS selector and parameter
          * @returns {{selector: string, parameter: string}} */
@@ -225,6 +247,7 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
             return `${div.cssPair.parameter}: ${div.asString}`;
         }
     });
+
     Object.defineProperty(div, 'locked', {
         /** Get lock state of control set
          * @returns {boolean} */
@@ -243,15 +266,93 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
     });
 
     div.reset = () => {
-        // Ensure unit is 'em' when resetting
-        unitSpan.textContent = 'em'
-        div.setParams(minimumMin, maximumMax, 0.1);
+
+        Object.assign(div, {
+            units: _defaultUnits,
+            min: _defaultMin,
+            max: _defaultMax,
+            value: _defaultValue
+        })
 
         // Refresh the options
         div.refreshOptions();
+    };
 
-        // Reset the value to default
-        div.value = 1;
+    /**
+     * Save the default configuration for this control.
+     *
+     * This function:
+     *  - Requires *all* four main parameters in the first argument object: `units`, `min`, `max`, and `value`.
+     *  - Rejects missing or `undefined` values for any of the above (all-or-nothing requirement).
+     *  - Validates units against allowed types (`defaultUnitType` or `'em'`).
+     *  - Converts numeric values to points for validation.
+     *  - Enforces absolute bounds (`minimumMin` / `maximumMax`) and logical constraints:
+     *      - `min` ≤ `max`
+     *      - `value` within the `[min, max]` range
+     *  - Stores defaults in the given display units, rounded appropriately:
+     *      - Whole number rounding for `defaultUnitType`
+     *      - One decimal place for `em`
+     *  - Optionally calls `div.reset()` if `withReset` is `true`.
+     *
+     * @function setDefaults
+     * @param {Object} params - Configuration object containing:
+     * @param {allowedUnits} params.units - Unit type for the defaults (`defaultUnitType` or `'em'`).
+     * @param {number|string} params.min - Default minimum value in specified units.
+     * @param {number|string} params.max - Default maximum value in specified units.
+     * @param {number|string} params.value - Default starting value in specified units.
+     * @param {boolean} [withReset=false] - If true, immediately applies defaults by calling `div.reset()`.
+     * @throws {Error} If any required parameter is missing, invalid, or violates bounds/logic.
+     * @returns {void} Does not return anything.
+     */
+    div.setDefaults = ({units, min, max, value}, withReset = false) => {
+        const mkErr = (msg) => {
+            throw new Error(`[FontSize Control][setDefaults] ${msg}`);
+        };
+
+        // All-or-nothing: every property must be present and not undefined
+        if ([units, min, max, value].some(v => v === undefined)) {
+            mkErr(`All parameters { units, min, max, value } must be provided.`);
+        }
+
+        // Validate units
+        if (units !== defaultUnitType && units !== 'em') {
+            mkErr(`Invalid units "${units}". Allowed: ${defaultUnitType} or 'em'.`);
+        }
+
+        // Parse numbers strictly
+        const toNumberStrict = (raw, name) => {
+            const n = (typeof raw === 'number') ? raw : parseFloat(raw);
+            if (!Number.isFinite(n)) mkErr(`${name} must be a finite number (got: ${String(raw)}).`);
+            return n;
+        };
+
+        const nMin = toNumberStrict(min, 'min');
+        const nMax = toNumberStrict(max, 'max');
+        const nValue = toNumberStrict(value, 'value');
+
+        // Convert to pt for validation
+        const toPt = (num, unit) => unit === defaultUnitType ? num : emToPt(num);
+        const minPt = toPt(nMin, units);
+        const maxPt = toPt(nMax, units);
+        const valuePt = toPt(nValue, units);
+
+        // Absolute bounds checks
+        if (minPt < minimumMin) mkErr(`min (${minPt}pt) is below absolute minimum (${minimumMin}pt).`);
+        if (maxPt > maximumMax) mkErr(`max (${maxPt}pt) exceeds absolute maximum (${maximumMax}pt).`);
+
+        // Logical ordering checks
+        if (minPt > maxPt) mkErr(`min (${minPt}pt) is greater than max (${maxPt}pt).`);
+        if (valuePt < minPt || valuePt > maxPt) {
+            mkErr(`value (${valuePt}pt) is outside the range [${minPt}pt, ${maxPt}pt].`);
+        }
+
+        // Store defaults in given display units (rounded appropriately)
+        _defaultUnits = units;
+        _defaultMin = (units === defaultUnitType) ? roundTo(nMin, 0) : roundTo(nMin, 1);
+        _defaultMax = (units === defaultUnitType) ? roundTo(nMax, 0) : roundTo(nMax, 1);
+        _defaultValue = (units === defaultUnitType) ? roundTo(nValue, 0) : roundTo(nValue, 1);
+
+        if (withReset) div.reset();
     };
 
     /**
@@ -305,33 +406,30 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
         dataList.innerHTML = '';
     };
     /** Repopulates datalist based on current min, max, and unit.
-     * Converts values to em when unit is px. */
+     * Converts values to pt when unit is em. */
     div.refreshOptions = () => {
         div.clearOptions();
 
         const step = 1;
 
-        // Convert min and max to em as base unit for generating options
-        let minEm = unitSpan.textContent === 'px' ? pxToEm(div.min) : div.min;
-        let maxEm = unitSpan.textContent === 'px' ? pxToEm(div.max) : div.max;
+        // Internal _min/_max are stored in pt.
+        // Convert to em for generating options if current unit is 'em', else keep pt.
+        let minUnitValue = ptToEm(_min);
+        let maxUnitValue = ptToEm(_max);
 
-        // Normalize minEm and maxEm so minEm <= maxEm
-        if (minEm > maxEm) [minEm, maxEm] = [maxEm, minEm];
+        // Ensure min <= max
+        if (minUnitValue > maxUnitValue) [minUnitValue, maxUnitValue] = [maxUnitValue, minUnitValue];
 
-        // Round bounds
-        minEm = Math.floor(minEm);
-        maxEm = Math.ceil(maxEm);
+        minUnitValue = Math.floor(minUnitValue);
+        maxUnitValue = Math.ceil(maxUnitValue);
 
-        // Number of steps (inclusive)
-        const count = Math.floor((maxEm - minEm) / step) + 1;
+        const count = Math.floor((maxUnitValue - minUnitValue) / step) + 1;
 
-        // Generate array in em
-        const emValues = Array.from({length: count}, (_, i) => minEm + i * step);
+        let points = Array.from({length: count}, (_, i) => minUnitValue + i * step);
 
-        // Convert back to px if unit is px; otherwise keep em
-        const values = emValues.map(v => unitSpan.textContent === 'px' ? emToPx(v) : v).map(v => roundTo(v, 1));
+        if (div.units === defaultUnitType) points = points.map(val => val * defaultUnitSize);
 
-        div.addOptions(values);
+        div.addOptions(points);
     };
 
     //-------------------------------------EVENT LISTENERS-------------------------------------
@@ -341,31 +439,20 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
     });
 
     sizeInput.addEventListener("input", () => {
-        div.value = sizeInput.value;
+        div.value = parseFloat(sizeInput.value);
     });
 
     sizeSlider.addEventListener("input", () => {
-        div.value = sizeSlider.value;
+        div.value = parseFloat(sizeSlider.value);
     });
 
     unitSpan.addEventListener("click", () => {
-        const precision = decimalPlaces(div.step);
-
-        if (unitSpan.textContent === 'em') {
-            unitSpan.textContent = 'px';
-            div.setParams(emToPx(div.min), emToPx(div.max), div.step)
-            div.value = roundTo(emToPx(div.value), precision);
-        } else if (unitSpan.textContent === 'px') {
-            unitSpan.textContent = 'em';
-            div.setParams(pxToEm(div.min), pxToEm(div.max), div.step)
-            div.value = roundTo(pxToEm(div.value), precision);
-        }
+        div.units = div.units === 'em' ? defaultUnitType : 'em';
     });
 
     //-------------------------------------SET DEFAULTS-------------------------------------
 
-    div.setParams(0, 5, 0.1);
-    div.value = 1;
+    div.setDefaults({units: defaultUnitType, min: 0, max: 7 * defaultUnitSize, value: defaultUnitSize}, true);
 
     //-------------------------------------ASSEMBLE CONTROL-------------------------------------
 

@@ -8,6 +8,8 @@ export function generateColorControl(cssSelector, cssParameter, labelText) {
 
     //-------------------------------------UTILITY FUNCTION-------------------------------------
 
+    let _defaultColor = '#000000'
+
     let setID = generateID(cssSelector, cssParameter);
 
     //-------------------------------------DEFINE COMPONENTS-------------------------------------
@@ -102,8 +104,46 @@ export function generateColorControl(cssSelector, cssParameter, labelText) {
     });
 
     div.reset = () => {
-        div.value = '#000000';
+        div.value = _defaultColor;
     };
+
+    /**
+     * Save the default color configuration for this Color type control.
+     *
+     * This function:
+     *  - Requires a valid CSS color string (named color, hex, rgb/rgba, hsl/hsla, etc.).
+     *  - Throws an error if the color is invalid.
+     *  - Stores the color as the default.
+     *  - Optionally calls div.reset() if withReset is true.
+     *
+     * @function setDefaults
+     * @param {Object} params - The configuration object.
+     * @param {string} params.value - A valid CSS color string.
+     * @param {boolean} [withReset=false] - If true, immediately applies defaults by calling div.reset().
+     * @throws {Error} If `color` is missing or not a valid CSS color.
+     * @returns {void} This function does not return anything.
+     */
+    div.setDefaults = ({value}, withReset = false) => {
+        const mkErr = (msg) => {
+            throw new Error(`[Color Control][setDefaults] ${msg}`);
+        };
+
+        // Ensure it's a string and check validity
+        if (typeof value !== "string" || !value.trim()) {
+            mkErr(`Value must be a non-empty string.`);
+        }
+
+        const s = new Option().style;
+        s.color = value;
+        if (s.color === "") {
+            mkErr(`Invalid CSS color: "${value}"`);
+        }
+
+        _defaultColor = value;
+
+        if (withReset) div.reset();
+    };
+
 
     //-------------------------------------EVENT LISTENERS-------------------------------------
 
