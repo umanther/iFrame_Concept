@@ -9,10 +9,9 @@
 
     <script type="module">
         import {setDebug} from "./scripts/debugLog.js";
+        import {controlsReady, ControlTypes, generateControl} from "./scripts/controls.js";
 
         setDebug(false);
-
-        import {controlsReady, generateControl, ControlTypes} from "./scripts/controls.js";
 
         await controlsReady;
 
@@ -383,12 +382,10 @@
             }
 
             // Construct final stylesheet text
-            const stylesheet = Object.entries(grouped)
+            // Inject into the iframe or other `doc`
+            style.textContent = Object.entries(grouped)
                 .map(([selector, declarations]) => `${selector} {\n  ${declarations.join(';\n  ')};\n}`)
                 .join('\n\n');
-
-            // Inject into the iframe or other `doc`
-            style.textContent = stylesheet;
         };
 
         const updateStyle = () => {

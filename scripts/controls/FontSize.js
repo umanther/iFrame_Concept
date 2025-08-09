@@ -26,7 +26,6 @@ export function generateFontSizeControl(cssSelector, cssParameter, labelText) {
      * @typedef {'px'|'em'} allowedUnits
      */
 
-
         // These are in pt.  Min and max pt would be appropriately converted
     const minimumMin = roundTo(0 * defaultUnitSize, 0);
     const maximumMax = roundTo(7 * defaultUnitSize, 0);
