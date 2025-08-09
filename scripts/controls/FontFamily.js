@@ -7,14 +7,14 @@ const defaultFonts = Object.fromEntries(
     Object.entries({
         Sans: "sans-serif",
         Serif: "serif",
-        'Times New Roman': "'Times New Roman', serif",
+        'Times New Roman': "Times New Roman, serif",
         Monospace: "monospace",
-        Roboto: "'Roboto', sans-serif",
-        'Open Sans': "'Open Sans', sans-serif",
-        Merriweather: "'Merriweather', serif",
-        Inconsolata: "'Inconsolata', monospace",
-        Lora: "'Lora', serif",
-        Domine: "'Domine', serif",
+        Roboto: "Roboto, sans-serif",
+        'Open Sans': "Open Sans, sans-serif",
+        Merriweather: "Merriweather, serif",
+        Inconsolata: "Inconsolata, monospace",
+        Lora: "Lora, serif",
+        Domine: "Domine, serif",
     }).sort(([a], [b]) => a.localeCompare(b))
 );
 
