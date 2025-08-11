@@ -123,9 +123,8 @@
         </div>
 
         <div id="functionButtons">
-            <button onclick="printPreview()">Print Preview</button>
-            <button onclick="saveAsPDF()">Save as PDF</button>
-            <br/><br/>
+            <button style="display: none" onclick="printPreview()">Print Preview</button>
+            <button style="display: none" onclick="saveAsPDF()">Save as PDF</button>
             <label for="templateSelector">Select Style Template:<br/>
                 <select id="templateSelector" data-control="templateSelector"></select><br/></label>
             <button id="resetStyles">Reset to template</button>
@@ -286,10 +285,23 @@
 
         // Inject Google Fonts
         if (!doc.getElementById("google-fonts")) {
+            doc.head.appendChild(
+                Object.assign(doc.createElement('link'), {
+                    rel: 'preconnect',
+                    href: 'https://fonts.googleapis.com'
+                })
+            );
+            const prelink = doc.createElement('link');
+            Object.assign(prelink, {
+                rel: 'preconnect',
+                href: 'https://fonts.gstatic.com'
+            });
+            prelink.setAttribute('crossorigin', '');
+            doc.head.appendChild(prelink);
             const link = doc.createElement("link");
             link.id = "google-fonts";
             link.rel = "stylesheet";
-            link.href = "https://fonts.googleapis.com/css2?family=Roboto&family=Open+Sans&family=Merriweather&family=Inconsolata&display=swap";
+            link.href = "https://fonts.googleapis.com/css2?family=Domine&family=Inconsolata&family=Lora&family=Merriweather:opsz@18..144&family=Open+Sans&family=Roboto&display=swap";
             link.onload = setupStyleControls; // Wait for fonts to load
             doc.head.appendChild(link);
         } else {

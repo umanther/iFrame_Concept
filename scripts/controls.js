@@ -76,49 +76,80 @@ export const ControlTypes = Object.freeze(
 /**
  * Dynamically generates a UI control using a registered control generator.
  *
- * This function acts as a dispatcher that calls the appropriate generator function
- * based on the specified `controlType`. All generator functions are expected to follow
- * the naming convention `generate<ControlName>Control` and must accept the following
- * standardized parameters:
+ * Generator functions must be registered in `generatorRegistry` using the keys found
+ * in {@link ControlTypes}. Each generator must include a `.use` metadata property
+ * that tells this dispatcher how to call it:
  *
- * - `cssSelector` — A CSS selector string that identifies the DOM element the control modifies.
- * - `cssParameter` — The name of the CSS property the control will manipulate (e.g. `"font-size"`).
- * - `labelText` — The display name for the control's UI label.
+ * - `use: "style"`  → generator signature: `(cssSelector, cssParameter, labelText)`
+ * - `use: "control"` → generator signature: `(id)`
  *
- * Available control types are defined in the {@link ControlTypes} enum-like object, which is
- * dynamically generated at runtime based on the available generators.
+ * The dispatcher is extensible: add new entries to `callPatterns` to support
+ * additional `.use` types and their expected argument patterns.
  *
- * @function
- * @param {string} controlType - The name of the control to generate. Must be a valid key in {@link ControlTypes}, e.g. `"FontSize"`, `"FontFamily"`, `"Color"`.
- * @param {string} cssSelector - The CSS selector for the target element (e.g. `".preview-box"`).
- * @param {string} cssParameter - The CSS property this control modifies (e.g. `"font-size"`, `"color"`).
- * @param {string} labelText - The human-readable label to display beside the control (e.g. `"Font Size"`).
- * @returns {DocumentFragment} A fragment containing the constructed UI control, ready for insertion into the DOM.
+ * @function generateControl
+ * @param {string} controlType - A key from {@link ControlTypes} naming the generator to call.
+ * @param {...any} args - Arguments to pass through to the generator. The expected arguments
+ *                        depend on the generator's `.use` value:
+ *                        - If `.use === "style"`: `(cssSelector, cssParameter, labelText)`
+ *                        - If `.use === "control"`: `(id)`
+ * @returns {any} The value returned by the generator (usually a DocumentFragment).
  *
- * @throws {Error} Throws if `controlType` is not listed in {@link ControlTypes}.
- * @throws {Error} Throws if no corresponding generator function is registered for the given `controlType`.
+ * @throws {Error} If `controlType` is not recognized.
+ * @throws {Error} If no generator is registered for `controlType`.
+ * @throws {Error} If the generator is missing a `.use` property or the `.use` value is unsupported.
+ * @throws {Error} If the provided arguments do not meet the simple validation rules for the chosen `.use`.
  *
  * @example
- * import { generateControl, ControlTypes } from './controls.js';
+ * // Style-type generator (usual case):
+ * generateControl(ControlTypes.FontSize, 'body', 'font-size', 'Font Size');
  *
- * // Create a FontSize control for modifying the font size of .editor-text
- * const fontSizeControl = generateControl(
- *   ControlTypes.FontSize,
- *   'body',
- *   'font-size',
- *   'Font Size'
- * );
- * document.body.appendChild(fontSizeControl);
- *
- * @see {@link ControlTypes} for valid control types.
+ * // Control-type generator (single id argument):
+ * generateControl(ControlTypes.RadioTabs, 'pageTabs');
  */
-export function generateControl(controlType, cssSelector, cssParameter, labelText) {
+export function generateControl(controlType, ...args) {
+    // basic controlType check
     if (!Object.values(ControlTypes).includes(controlType)) {
         throw new Error(`Unsupported control "${controlType}"`);
     }
+
     const fn = generatorRegistry[controlType];
     if (!fn) {
         throw new Error(`No generator function registered for control "${controlType}"`);
     }
-    return fn(cssSelector, cssParameter, labelText);
+
+    const useType = fn.use;
+    if (!useType) {
+        throw new Error(`Generator for "${controlType}" is missing required 'use' metadata.`);
+    }
+
+    // Centralized, extensible call patterns.
+    // Add new keys here for additional .use types.
+    const callPatterns = {
+        style: ([cssSelector, cssParameter, labelText]) => {
+            if (typeof cssSelector !== 'string' || !cssSelector.length) {
+                throw new Error(`'style' generator for "${controlType}" requires a cssSelector (string) as first argument.`);
+            }
+            if (typeof cssParameter !== 'string' || !cssParameter.length) {
+                throw new Error(`'style' generator for "${controlType}" requires a cssParameter (string) as second argument.`);
+            }
+            if (typeof labelText !== 'string' || !labelText.length) {
+                throw new Error(`'style' generator for "${controlType}" requires a labelText (string) as third argument.`);
+            }
+            return fn(cssSelector, cssParameter, labelText);
+        },
+
+        control: ([id]) => {
+            if (typeof id !== 'string' || !id.length) {
+                throw new Error(`'control' generator for "${controlType}" requires an id (string) as its single argument.`);
+            }
+            return fn(id);
+        },
+    };
+
+    const caller = callPatterns[useType];
+    if (!caller) {
+        throw new Error(`Unsupported 'use' type "${useType}" for control "${controlType}".`);
+    }
+
+    return caller(args);
 }

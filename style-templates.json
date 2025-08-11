@@ -21,7 +21,7 @@
             },
             "font-family": {
               "type": "FontFamily",
-              "value": "Times New Roman, serif",
+              "value": "\"Times New Roman\", serif",
               "locked": false
             }
           }
@@ -44,7 +44,7 @@
             },
             "font-family": {
               "type": "FontFamily",
-              "value": "Times New Roman, serif",
+              "value": "\"Times New Roman\", serif",
               "locked": false
             }
           }
@@ -72,7 +72,7 @@
             },
             "font-family": {
               "type": "FontFamily",
-              "value": "Roboto, sans-serif",
+              "value": "\"Roboto\", sans-serif",
               "locked": true
             }
           }
@@ -95,7 +95,7 @@
             },
             "font-family": {
               "type": "FontFamily",
-              "value": "Merriweather, serif",
+              "value": "\"Merriweather\", serif",
               "locked": false
             }
           }

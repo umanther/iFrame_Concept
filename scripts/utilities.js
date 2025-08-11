@@ -216,3 +216,20 @@ export function decimalPlaces(num) {
 export function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
+
+/**
+ * Sanitizes a string for use as a valid HTML id by trimming whitespace
+ * and replacing all internal whitespace sequences with underscores.
+ *
+ * This ensures the returned string is safe to use as an HTML id attribute,
+ * which must not contain spaces.
+ *
+ * @param {string} str - The input string to sanitize.
+ * @returns {string} A sanitized string suitable for use as an HTML id.
+ *
+ * @example
+ * sanitizeId("  My Tab 1 ") // returns "My_Tab_1"
+ */
+export function sanitizeId(str) {
+    return str.trim().replace(/\s+/g, '_');
+}
