@@ -22,12 +22,12 @@ const defaultFonts = Object.fromEntries(
 );
 
 export const generateFontFamilyControl = Object.assign(
-    /** Generates a font family control set.
+    /** Generates a FontFamily control set.
      *
      * @param {string} cssSelector - String denoting the CSS Selector this control sets.
      * @param {string} cssParameter - String denoting the CSS Parameter this control sets.
      * @param {string} labelText - Text to use for the label.
-     * @returns {DocumentFragment}
+     * @returns {HTMLDivElement}
      */
     function generateFontFamilyControl(cssSelector, cssParameter, labelText) {
         if (!padlockTemplate || typeof Choices !== 'function') {
@@ -247,11 +247,7 @@ export const generateFontFamilyControl = Object.assign(
 
         div.append(padlock, label);
 
-        const result = new DocumentFragment();
-
-        result.appendChild(div);
-
-        return result;
+        return div;
     },
     {use: 'style'}
 );

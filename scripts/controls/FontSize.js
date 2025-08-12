@@ -7,12 +7,12 @@ const mkErr = (msg) => {
 };
 
 export const generateFontSizeControl = Object.assign(
-    /** Generates a size control set.
+    /** Generates a FontSize control set.
      *
      * @param {string} cssSelector - String denoting the CSS Selector this control sets.
      * @param {string} cssParameter - String denoting the CSS Parameter this control sets.
      * @param {string} labelText - Text to use for the label.
-     * @returns {DocumentFragment}
+     * @returns {HTMLDivElement}
      */
     function generateFontSizeControl(cssSelector, cssParameter, labelText) {
         if (!padlockTemplate) {
@@ -468,11 +468,7 @@ export const generateFontSizeControl = Object.assign(
 
         div.append(padlock, label);
 
-        let result = new DocumentFragment();
-
-        result.append(div);
-
-        return result;
+        return div;
     },
     {use: 'style'}
 );

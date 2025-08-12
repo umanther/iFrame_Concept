@@ -7,30 +7,6 @@
     <!-- html2pdf.js import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <script type="module">
-        import {setDebug} from "./scripts/debugLog.js";
-        import {controlsReady, ControlTypes, generateControl} from "./scripts/controls.js";
-
-        setDebug(false);
-
-        await controlsReady;
-
-        const pageSettings = document.getElementById("pageSettings");
-        pageSettings.append(
-            generateControl(ControlTypes.FontSize, "body", "font-size", "Font Size"),
-            generateControl(ControlTypes.FontFamily, "body", "font-family", "Font"),
-            generateControl(ControlTypes.Color, "body", "color", "Font Color"),
-        );
-
-        const headerSettings = document.getElementById("headerSettings");
-        headerSettings.append(
-            generateControl(ControlTypes.FontSize, "h1", "font-size", "Font Size"),
-            generateControl(ControlTypes.FontFamily, "h1", "font-family", "Font"),
-            generateControl(ControlTypes.Color, "h1", "color", "Font Color"),
-        );
-    </script>
-
-
     <style>
         html, body {
             height: 100%;
@@ -62,6 +38,7 @@
             overflow-y: auto;
             flex-grow: 1;
             margin-bottom: 1em;
+            border-top: 1px solid #ccc;
         }
 
         #functionButtons {
@@ -114,12 +91,6 @@
 <div id="container">
     <div id="styleControls">
         <div id="controlContainer">
-            <div class="styleBlock" id="pageSettings">
-                <h3>Page settings</h3>
-            </div>
-            <div class="styleBlock" id="headerSettings">
-                <h3>Header settings</h3>
-            </div>
         </div>
 
         <div id="functionButtons">
@@ -136,8 +107,12 @@
 </div>
 
 <script type="module">
+
     import {setDebug, debugLog} from "./scripts/debugLog.js";
     import {generateID, splitID} from "./scripts/controlUtils.js";
+    import {controlsReady} from "./scripts/controls.js";
+
+    await controlsReady
 
     setDebug(true);
 
@@ -360,8 +335,8 @@
                     let attribsToSet = {...attributes};
                     delete attribsToSet['type'];
                     delete attribsToSet['locked'];
-                    target.locked = attributes.locked;
-                    target.setDefaults(attribsToSet, true);
+                    if (target.locked) target.locked = attributes.locked;
+                    if (target.setDefaults) target.setDefaults(attribsToSet, true);
                 }
             }
         }

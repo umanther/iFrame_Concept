@@ -7,6 +7,11 @@ const mkErr = (msg) => {
 };
 
 export const generateRadioTabsControl = Object.assign(
+    /** Generates a RadioTabs control set.
+     *
+     * @param {string} id - String denoting ID this control sets.
+     * @returns {HTMLDivElement}
+     */
     function generateRadioTabsControl(id) {
         //-------------------------------------UTILITY FUNCTION-------------------------------------
 
@@ -100,13 +105,13 @@ export const generateRadioTabsControl = Object.assign(
             id: id,
             'data-control': 'RadioTabs'
         });
+
         const shadowRoot = div.attachShadow({mode: "open"});
 
         //-------------------------------------STYLE ELEMENT AND UPDATER-------------------------------------
 
         const style = document.createElement('style');
         style.id = 'RadioTabsControlStylesheet';
-        shadowRoot.appendChild(style);
 
         // Function to generate stylesheet text based on current _tabStyles
         function updateStyleSheet() {
@@ -353,16 +358,16 @@ export const generateRadioTabsControl = Object.assign(
 
         const tabContainer = document.createElement("div");
         tabContainer.classList.add("tabControl");
-        shadowRoot.appendChild(tabContainer);
+
 
         //-------------------------------------ASSEMBLE CONTROL-------------------------------------
 
-        const result = document.createDocumentFragment();
-        result.appendChild(div);
+        shadowRoot.appendChild(style);
+        shadowRoot.appendChild(tabContainer);
 
         populateTabs();
 
-        return result;
+        return div;
     },
     {use: 'control'}
 );

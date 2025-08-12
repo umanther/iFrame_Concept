@@ -6,12 +6,12 @@ const mkErr = (msg) => {
 };
 
 export const generateColorControl = Object.assign(
-    /** Generates a color control set.
+    /** Generates a Color control set.
      *
      * @param {string} cssSelector - String denoting the CSS Selector this control sets.
      * @param {string} cssParameter - String denoting the CSS Parameter this control sets.
      * @param {string} labelText - Text to use for the label.
-     * @returns {DocumentFragment}
+     * @returns {HTMLDivElement}
      */
     function generateColorControl(cssSelector, cssParameter, labelText) {
         if (!padlockTemplate) {
@@ -173,10 +173,7 @@ export const generateColorControl = Object.assign(
 
         div.append(padlock, label);
 
-        const result = new DocumentFragment();
-        result.appendChild(div);
-
-        return result;
+        return div;
     },
     {use: 'style'}
 );
