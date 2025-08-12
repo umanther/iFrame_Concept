@@ -2,103 +2,123 @@
   "templates": [
     {
       "name": "Default",
-      "sections": [
+      "groups": [
         {
-          "name": "Page Settings",
-          "body": {
-            "font-size": {
-              "type": "FontSize",
-              "units": "em",
-              "min": 0.5,
-              "max": 3,
-              "value": 1,
-              "locked": false
-            },
-            "color": {
-              "type": "Color",
-              "value": "#000000",
-              "locked": false
-            },
-            "font-family": {
-              "type": "FontFamily",
-              "value": "\"Times New Roman\", serif",
-              "locked": false
+          "name": "Page",
+          "sections": [
+            {
+              "name": "Page Settings",
+              "body": {
+                "font-size": {
+                  "type": "FontSize",
+                  "units": "em",
+                  "min": 0.5,
+                  "max": 3,
+                  "value": 1,
+                  "locked": false
+                },
+                "color": {
+                  "type": "Color",
+                  "value": "#000000",
+                  "locked": false
+                },
+                "font-family": {
+                  "type": "FontFamily",
+                  "value": "\"Times New Roman\", serif",
+                  "locked": false
+                }
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Header Settings",
-          "h1": {
-            "font-size": {
-              "type": "FontSize",
-              "units": "px",
-              "min": 8,
-              "max": 80,
-              "value": 22,
-              "locked": false
-            },
-            "color": {
-              "type": "Color",
-              "value": "#FF0000",
-              "locked": false
-            },
-            "font-family": {
-              "type": "FontFamily",
-              "value": "\"Times New Roman\", serif",
-              "locked": false
+          "name": "Header",
+          "sections": [
+            {
+              "name": "Header Settings",
+              "h1": {
+                "font-size": {
+                  "type": "FontSize",
+                  "units": "px",
+                  "min": 8,
+                  "max": 80,
+                  "value": 22,
+                  "locked": false
+                },
+                "color": {
+                  "type": "Color",
+                  "value": "#FF0000",
+                  "locked": false
+                },
+                "font-family": {
+                  "type": "FontFamily",
+                  "value": "\"Times New Roman\", serif",
+                  "locked": false
+                }
+              }
             }
-          }
+          ]
         }
       ]
     },
     {
       "name": "Large Print",
-      "sections": [
+      "groups": [
         {
-          "name": "Page Settings",
-          "body": {
-            "font-size": {
-              "type": "FontSize",
-              "units": "px",
-              "min": 8,
-              "max": 80,
-              "value": 32,
-              "locked": true
-            },
-            "color": {
-              "type": "Color",
-              "value": "#333333",
-              "locked": false
-            },
-            "font-family": {
-              "type": "FontFamily",
-              "value": "\"Roboto\", sans-serif",
-              "locked": true
+          "name": "Page",
+          "sections": [
+            {
+              "name": "Page Settings",
+              "body": {
+                "font-size": {
+                  "type": "FontSize",
+                  "units": "px",
+                  "min": 8,
+                  "max": 80,
+                  "value": 32,
+                  "locked": true
+                },
+                "color": {
+                  "type": "Color",
+                  "value": "#333333",
+                  "locked": false
+                },
+                "font-family": {
+                  "type": "FontFamily",
+                  "value": "\"Roboto\", sans-serif",
+                  "locked": true
+                }
+              }
             }
-          }
+          ]
         },
         {
-          "name": "Header Settings",
-          "h1": {
-            "font-size": {
-              "type": "FontSize",
-              "units": "em",
-              "min": 0.5,
-              "max": 5,
-              "value": 3,
-              "locked": true
-            },
-            "color": {
-              "type": "Color",
-              "value": "#000000",
-              "locked": false
-            },
-            "font-family": {
-              "type": "FontFamily",
-              "value": "\"Merriweather\", serif",
-              "locked": false
+          "name": "Header",
+          "sections": [
+            {
+              "name": "Header Settings",
+              "h1": {
+                "font-size": {
+                  "type": "FontSize",
+                  "units": "em",
+                  "min": 0.5,
+                  "max": 5,
+                  "value": 3,
+                  "locked": true
+                },
+                "color": {
+                  "type": "Color",
+                  "value": "#000000",
+                  "locked": false
+                },
+                "font-family": {
+                  "type": "FontFamily",
+                  "value": "\"Merriweather\", serif",
+                  "locked": false
+                }
+              }
             }
-          }
+          ]
         }
       ]
     }
