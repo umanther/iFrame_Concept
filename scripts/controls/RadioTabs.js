@@ -19,13 +19,13 @@ export const generateRadioTabsControl = Object.assign(
 
         // Initial styles object
         let _tabStyles = {
-            height: '110px',
+            height: '100px',
             activeIndicatorHeight: '10px',
             unselectedColor: '#ddd',
             selectedColor: '#f8f8f8',
             borderColor: '#999',
             hoverColor: '#ccc',
-            labelPadding: '8px 0.25em',
+            labelPadding: '3px 0.25em 0 .25em',
             borderRadius: '6px',
             transitionDuration: '.18s',
             fontFamily: 'Arial, sans-serif',

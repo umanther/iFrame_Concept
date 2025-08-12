@@ -125,17 +125,14 @@ export function generateControl(controlType, ...args) {
     // Centralized, extensible call patterns.
     // Add new keys here for additional .use types.
     const callPatterns = {
-        style: ([cssSelector, cssParameter, labelText]) => {
+        style: ([cssSelector, cssParameter]) => {
             if (typeof cssSelector !== 'string' || !cssSelector.length) {
                 throw new Error(`'style' generator for "${controlType}" requires a cssSelector (string) as first argument.`);
             }
             if (typeof cssParameter !== 'string' || !cssParameter.length) {
                 throw new Error(`'style' generator for "${controlType}" requires a cssParameter (string) as second argument.`);
             }
-            if (typeof labelText !== 'string' || !labelText.length) {
-                throw new Error(`'style' generator for "${controlType}" requires a labelText (string) as third argument.`);
-            }
-            return fn(cssSelector, cssParameter, labelText);
+            return fn(cssSelector, cssParameter);
         },
 
         control: ([id]) => {

@@ -30,7 +30,7 @@
             max-height: 100%;
             overflow: hidden;
             box-sizing: border-box;
-            padding: 1em;
+            margin: 1em;
             background-color: #ddf;
         }
 
@@ -42,7 +42,7 @@
         }
 
         #functionButtons {
-            margin-top: auto;
+            margin: auto 1em 1em 1em;
             padding-top: 1em;
             border-top: 1px solid #ccc;
         }
@@ -89,10 +89,10 @@
 <body>
 
 <div id="container">
-    <div id="styleControls">
-        <div id="controlContainer">
-        </div>
+    <div style="display: flex;flex-direction: column;height: 100%;">
+        <div id="styleControls">
 
+        </div>
         <div id="functionButtons">
             <button style="display: none" onclick="printPreview()">Print Preview</button>
             <button style="display: none" onclick="saveAsPDF()">Save as PDF</button>
@@ -107,10 +107,25 @@
 </div>
 
 <script type="module">
-
     import {setDebug, debugLog} from "./scripts/debugLog.js";
-    import {generateID, splitID} from "./scripts/controlUtils.js";
     import {controlsReady} from "./scripts/controls.js";
+    import {generateControl} from "./scripts/controls.js";
+    import {sanitizeId} from "./scripts/utilities.js";
+
+    const frame = getControl("previewFrame");
+    frame.addEventListener('load',
+        async () => {
+            // Load templates from style-templates.json
+            await parseJsonTemplates();
+            // Populate the template selector dropdown **before** setting up style controls
+
+            populateTemplateSelector();
+            // Then setup controls, which reads from currentDefault and sets input values
+
+            injectStyleSheet();
+        }
+    );
+    frame.src = "Large HTML page with images.html";
 
     await controlsReady
 
@@ -182,7 +197,6 @@
     }
 
     let styleTemplates; // Object to hold style templates loaded from the style-templates.json file
-    let controls; // Object to hold in-page control references
 
     function getControl(id) {
         const el = document.getElementById(id);
@@ -200,13 +214,7 @@
             styleTemplates = createStyleTemplatesProxy(styleTemplatesRaw);
 
             jsonData.templates.forEach(template => {
-                // Clone template and keep sections array intact
-                const processed = {
-                    name: template.name,
-                    sections: structuredClone(template.sections)
-                };
-
-                styleTemplates.templates.push(processed);
+                styleTemplates.templates.push(structuredClone(template));
             });
         } catch (error) {
             console.error("Failed to parse style templates:", error);
@@ -214,33 +222,59 @@
     }
 
     function populateControls() {
-        controls = Object.freeze(
-            Object.fromEntries(
-                Array.from(document.querySelectorAll("[data-control]")).map(el => [el.id, el])
-            )
-        );
-        debugLog("Controls loaded:", controls);
+        const currentTemplate = styleTemplates.getCurrentTemplate();
+        const styleControlsDiv = document.getElementById('styleControls');
+        styleControlsDiv.innerHTML = '';
+
+        const tabs = styleControlsDiv.appendChild(generateControl('RadioTabs', 'radioTabs'));
+        const controlContainerDiv = styleControlsDiv.appendChild(document.createElement('div'));
+        controlContainerDiv.id = 'controlContainer';
+
+        for (const group of currentTemplate.groups) {
+            const groupContainerDiv = document.createElement('div');
+            groupContainerDiv.dataset.group = sanitizeId(group.name);
+            tabs.appendTab(group.name);
+
+            for (const section of group.sections) {
+                const sectionContainerDiv = document.createElement('div')
+                sectionContainerDiv.classList.add('styleBlock');
+                const sectionName = section.name;
+                const h3 = sectionContainerDiv.appendChild(document.createElement('h3'));
+                h3.innerText = sectionName;
+                Object.entries(section).forEach(([cssSelector, params]) => {
+                    if (cssSelector !== 'name') {
+                        Object.entries(params).forEach(([cssProperty, params]) => {
+                            if (cssProperty !== 'name') {
+                                const control = generateControl(params.type, cssSelector, cssProperty);
+                                sectionContainerDiv.appendChild(control);
+                                control.setDefaults(params, true);
+                                control.locked = params.locked ?? false;
+                                control.label = params.label ?? '';
+                                control.dataset.providesStyle = true.toString();
+
+                                control.addEventListener('change', applyStyles);
+                            }
+                        });
+                    }
+                });
+                groupContainerDiv.appendChild(sectionContainerDiv);
+            }
+            controlContainerDiv.appendChild(groupContainerDiv);
+        }
+        tabs.tabStyles.height = "70px";
+        tabs.addEventListener('change', () => {
+            const selected = sanitizeId(tabs.value); // get the currently selected tab value
+            const groups = document.querySelectorAll('[data-group]');
+            groups.forEach(group => {
+                if (group.dataset.group === selected) {
+                    group.style.display = '';   // show matching group(s)
+                } else {
+                    group.style.display = 'none';  // hide others
+                }
+            });
+        });
+        tabs.dispatchEvent(new Event('change'));
     }
-
-    const frame = getControl("previewFrame");
-
-    window.onload = () => {
-        frame.src = "Large HTML page with images.html";
-        frame.onload = async () => {
-            // Load templates from style-templates.json
-            await parseJsonTemplates();
-
-            // Populate the controls object with in-page controls for use in later functions
-            populateControls();
-
-            // Populate the template selector dropdown **before** setting up style controls
-            populateTemplateSelector();
-
-            // Then setup controls, which reads from currentDefault and sets input values
-            injectStyleSheet();
-        };
-
-    };
 
     function injectStyleSheet() {
         const doc = frame.contentDocument || frame.contentWindow.document;
@@ -248,7 +282,7 @@
         // Make the default background white instead of transparent
         let bgColor = doc.createElement('style')
         bgColor.innerHTML = "html { background-color: white }";
-        doc.head.firstChild.before(bgColor);
+        doc.head.prepend(bgColor);
 
         // Add the style tag if it doesn't exist
         if (!doc.getElementById("dynamic-style")) {
@@ -286,7 +320,7 @@
 
     function populateTemplateSelector() {
         // Clear existing options (if any)
-        let selector = controls.templateSelector;
+        let selector = document.getElementById("templateSelector");
         selector.innerHTML = "";
 
         const names = styleTemplates.getTemplateNames();
@@ -299,8 +333,8 @@
         // Add options to the dropdown
         names.forEach(name => {
             const option = document.createElement("option");
-            option.value = name;
-            option.textContent = name;
+            option.value = name.toString();
+            option.textContent = name.toString();
             selector.appendChild(option);
         });
 
@@ -312,86 +346,62 @@
         }
 
         // Call once to sync constraints on an initial load
-        updateControls();
+        populateControls();
 
         // Add change event listener after populating options
         selector.addEventListener("change", () => {
             const selected = selector.value;
             styleTemplates.setCurrentTemplate(selected);
-            updateControls();
+            populateControls();
+            applyStyles();
         });
     }
 
-    function updateControls() {
-        const current = styleTemplates.getCurrentTemplate();
-        if (!current) return;
+    function applyStyles() {
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        const style = doc.getElementById("dynamic-style");
 
-        for (let section of current.sections) {
-            for (let cssSelector in section) {
-                if (cssSelector === 'name') continue;
-                for (let cssProperty in section[cssSelector]) {
-                    let attributes = section[cssSelector][cssProperty]
-                    let target = controls[generateID(cssSelector, cssProperty)];
-                    let attribsToSet = {...attributes};
-                    delete attribsToSet['type'];
-                    delete attribsToSet['locked'];
-                    if (target.locked) target.locked = attributes.locked;
-                    if (target.setDefaults) target.setDefaults(attribsToSet, true);
-                }
+        // Get all controls from the main document
+        const validControls = [...document.querySelectorAll('[data-provides-style]')];
+
+        // Group declarations by CSS selector
+        const grouped = {};
+
+        for (const el of validControls) {
+            const selector = el.cssSelector;
+            const declaration = el.cssDeclaration;
+
+            if (!grouped[selector]) {
+                grouped[selector] = [];
             }
+
+            grouped[selector].push(declaration);
         }
+
+        // Construct final stylesheet text
+        // Inject into the iframe or other `doc`
+        style.textContent = Object.entries(grouped)
+            .map(([selector, declarations]) => `${selector} {\n  ${declarations.join(';\n  ')};\n}`)
+            .join('\n\n');
+    }
+
+    function resetStyleControls() {
+        const tabs = document.getElementById('radioTabs');
+        const selectedTab = tabs?.value;
+        populateControls();
+        const newTabs = document.getElementById('radioTabs');
+        if (selectedTab) {
+            newTabs.value = selectedTab;
+            newTabs.dispatchEvent(new Event('change'));
+        }
+
+        applyStyles();
     }
 
     function setupStyleControls() {
-        const doc = frame.contentDocument || frame.contentWindow.document;
-
-        const applyStyles = () => {
-            const style = doc.getElementById("dynamic-style");
-
-            // Get all controls from the main document
-            const controlElements = [...document.querySelectorAll('[data-control]')];
-
-            // Filter only those with a .reset() method
-            const validControls = controlElements.filter(el => typeof el.reset === 'function');
-
-            // Group declarations by CSS selector
-            const grouped = {};
-
-            for (const el of validControls) {
-                const selector = el.cssSelector;
-                const declaration = el.cssDeclaration;
-
-                if (!grouped[selector]) {
-                    grouped[selector] = [];
-                }
-
-                grouped[selector].push(declaration);
-            }
-
-            // Construct final stylesheet text
-            // Inject into the iframe or other `doc`
-            style.textContent = Object.entries(grouped)
-                .map(([selector, declarations]) => `${selector} {\n  ${declarations.join(';\n  ')};\n}`)
-                .join('\n\n');
-        };
-
-        const updateStyle = () => {
-            applyStyles();
-        };
-
-        function resetStyleControls() {
-            updateControls();
-            updateStyle();
-        }
-
         getControl("resetStyles").addEventListener("click", resetStyleControls);
 
-        for (const control of Object.values(controls)) {
-            control.addEventListener("change", updateStyle);
-        }
-
-        updateControls(); // Verify controls are set to current template
-        updateStyle(); // Verify applied style is the current template
+        resetStyleControls();
     }
 
     function printPreview() {

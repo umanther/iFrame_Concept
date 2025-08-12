@@ -29,7 +29,7 @@ export const generateFontFamilyControl = Object.assign(
      * @param {string} labelText - Text to use for the label.
      * @returns {HTMLDivElement}
      */
-    function generateFontFamilyControl(cssSelector, cssParameter, labelText) {
+    function generateFontFamilyControl(cssSelector, cssParameter) {
         if (!padlockTemplate || typeof Choices !== 'function') {
             throw new Error("FontFamily control cannot render — required assets not ready. Await controlsReady first.");
         }
@@ -60,7 +60,7 @@ export const generateFontFamilyControl = Object.assign(
         const label = document.createElement("label");
         assignProps(label, {
             id: `${setID}-label`,
-            textContent: labelText,
+            textContent: 'Font Family',
             for: `${setID}-input`
         }, {
             display: 'flex',
@@ -121,6 +121,26 @@ export const generateFontFamilyControl = Object.assign(
             set(newVal) {
                 fontSelChoices.setChoiceByValue(newVal);
                 fontSel.dispatchEvent(new Event("change", {bubbles: true}));
+            }
+        });
+
+        Object.defineProperty(div, 'label', {
+            get() {
+                if (label.firstChild && label.firstChild.nodeType === Node.TEXT_NODE) {
+                    return label.firstChild.textContent;
+                }
+                return '';
+            },
+            set(text) {
+                let textNode = undefined;
+                if (label.firstChild) {
+                    textNode = label.firstChild.nodeType === Node.TEXT_NODE ? label.firstChild : null
+                }
+                if (textNode) {
+                    textNode.textContent = text;
+                } else {
+                    label.insertBefore(document.createTextNode(text), label.firstChild);
+                }
             }
         });
 
